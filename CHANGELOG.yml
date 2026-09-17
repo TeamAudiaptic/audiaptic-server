@@ -1,1 +1,11 @@
-entries: []
+entries:
+- id: 1
+  pr: 2
+  author: shackhorn
+  time: '2026-09-17T18:36:51+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/2
+  changes:
+  - type: maintenance
+    emoji: 🔧
+    label: Maintenance
+    message: Redo changelog workflow.
