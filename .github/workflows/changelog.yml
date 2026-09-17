@@ -1,0 +1,68 @@
+name: Changelog
+
+on:
+  pull_request_target:
+    types: [closed]
+
+concurrency:
+  group: changelog-commit
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # SECURITY: this checks out the BASE branch, never the PR head.
+      # pull_request_target runs with write permissions against the base repo,
+      # so running code from an untrusted PR here would be an ACE hole.
+      - name: Check out the script from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+
+      - name: Check out the changelog branch
+        uses: actions/checkout@v4
+        with:
+          ref: changelog
+          path: changelog
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Record changelog entry
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          CHANGELOG_PATH: changelog/CHANGELOG.yml
+        run: python base/.github/scripts/changelog.py
+
+      - name: Commit and push
+        working-directory: changelog
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git add CHANGELOG.yml
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "Changelog for PR #${PR_NUMBER}"
+          git pull --rebase origin changelog
+          git push origin HEAD:changelog
