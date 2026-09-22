@@ -1,0 +1,64 @@
+name: Auto-Update API Docs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'       # Triggers workflow only when API code changes
+      - 'package.json'
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Crucial: Allows GitHub Action to commit markdown docs back to your repo
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # --- 1. Generate the OpenAPI Spec from Fastify ---
+      - name: Install Root/API Dependencies
+        run: npm ci
+
+      - name: Export OpenAPI JSON Spec
+        run: npm run export:schema
+        env:
+          PORT: 3000
+          NODE_ENV: test
+
+      # --- 2. Copy to Docusaurus and build the markdown docs ---
+      # (Adjust path if Docusaurus is in a subfolder like './docs')
+      - name: Copy Spec to Docusaurus workspace
+        run: cp openapi.json ./openapi.json 
+
+      - name: Install Docusaurus dependencies
+        run: npm install docusaurus-plugin-openapi-docs docusaurus-theme-openapi-docs
+
+      - name: Clean and Generate Docusaurus Markdown Docs
+        run: |
+          npx docusaurus clean-api-docs fastifyApi
+          npx docusaurus gen-api-docs fastifyApi
+
+      # --- 3. Push the fresh documentation files back into GitHub ---
+      - name: Commit and Push Updated Documentation Pages
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@://github.com"
+          
+          # Add the generated openapi.json and the generated MDX files
+          git add openapi.json docs/api/
+          
+          # Only commit if changes actually exist to avoid infinite build loops
+          if git diff --cached --quiet; then
+            echo "No changes detected in API documentation."
+          else
+            git commit -m "docs: auto-generated fresh server api blueprints [skip ci]"
+            git push origin main
+          fi
