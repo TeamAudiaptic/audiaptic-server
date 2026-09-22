@@ -9,3 +9,13 @@ entries:
     emoji: 🔧
     label: Maintenance
     message: Redo changelog workflow.
+- id: 2
+  pr: 19
+  author: shackhorn
+  time: '2026-09-22T22:04:35+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/19
+  changes:
+  - type: maintenance
+    emoji: 🔧
+    label: Maintenance
+    message: Bootstrapped initial server environment.
