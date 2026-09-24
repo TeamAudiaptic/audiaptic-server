@@ -1,3 +1,11 @@
-{$SITE_DOMAIN:localhost} {
-    reverse_proxy davhi-api:3000
+# davhi-api goes to 3000 (domain.xyz/api/)
+# davhi-portal goes to 3000 (domain.xyz/)
+
+{SITE_DOMAIN:localhost} {
+    route /api/* {
+        reverse_proxy davhi-api:3000
+    }
+    route /* {
+        reverse_proxy davhi-portal:3000
+    }
 }

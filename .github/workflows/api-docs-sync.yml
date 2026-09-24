@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'src/**'       # Triggers workflow only when API code changes
-      - 'package.json'
+      - './api/src/**'       # Triggers workflow only when API code changes
+      - './api/package.json'
 
 jobs:
   sync-docs:
@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Change Directory
+        run: cd ./api
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

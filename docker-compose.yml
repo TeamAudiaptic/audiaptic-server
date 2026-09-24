@@ -19,8 +19,18 @@ services:
       - app-net
 
   davhi-api:
-    build: .
+    build: ./api
     container_name: davhi-api
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-development} # Falls back to development locally
+    networks:
+      - app-net
+    
+  davhi-portal:
+    build: ./portal
+    container_name: davhi-portal
     restart: unless-stopped
     environment:
       - PORT=3000
