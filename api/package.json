@@ -1,7 +1,6 @@
 {
   "name": "audiaptic-server",
   "version": "1.0.0",
-  "type": "module",
   "description": "The API for a distributed audio-visual-haptic performance solution.",
   "main": "index.js",
   "scripts": {

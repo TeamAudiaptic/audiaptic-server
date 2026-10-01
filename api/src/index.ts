@@ -6,9 +6,9 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
-import { env } from './env.js';
-import { APIUser, APIUserResponse201 } from './api-schemas/user.api.schema.js';
-import { APIHelloWorld, APIHelloWorldResponse200 } from './api-schemas/helloworld.api.schema.js';
+import { env } from './env';
+import { APIUser, APIUserResponse201 } from './api-schemas/user.api.schema';
+import { APIHelloWorld, APIHelloWorldResponse200 } from './api-schemas/helloworld.api.schema';
 
 const app = Fastify({
     logger: true,
@@ -19,7 +19,7 @@ app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
 // 1. Register the core Swagger plugin
-await app.register(fastifySwagger, {
+app.register(fastifySwagger, {
     openapi: {
         info: {
             title: 'Distributed Audio-Visual-Haptic Interface Server API',
@@ -35,7 +35,7 @@ await app.register(fastifySwagger, {
 });
 
 // 2. Register the Swagger UI interface (accessible locally at http://localhost:3000/docs)
-await app.register(fastifySwaggerUi, {
+app.register(fastifySwaggerUi, {
     routePrefix: '/docs',
 });
 
