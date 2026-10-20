@@ -6,12 +6,9 @@ import { validatorCompiler, serializerCompiler, jsonSchemaTransform } from 'fast
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
 import { env } from './env.js';
-import { APIUser, APIUserResponse201 } from './api-schemas/user.api.schema.js';
-import { APIHelloWorld, APIHelloWorldResponse200 } from './api-schemas/helloworld.api.schema.js';
 import { R2Upload, R2List, type R2UploadResponse201, type R2ListResponse200 } from './api-schemas/r2.api.schema.js';
 import { performerRoute } from './sockets/routes/performer.route';
 import { helloWorldRoute } from './routes/helloWorld.route';
@@ -24,7 +21,7 @@ const app = Fastify({
 }).withTypeProvider<ZodTypeProvider>();
 
 // Add CORS before other plugins
-await app.register(fastifyCors, {
+app.register(fastifyCors, {
   origin: true, // Allow all origins (for demo; restrict in production)
 });
 
