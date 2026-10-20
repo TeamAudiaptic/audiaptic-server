@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { APIError, createAPIError } from '../api-general/error.api.schema.js';
+import { APIError, createAPIError } from './error.api.schema.js';
 
 export class APIUser {
   static readonly route = {

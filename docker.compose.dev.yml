@@ -1,0 +1,9 @@
+services:
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
