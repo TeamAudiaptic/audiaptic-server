@@ -1,0 +1,9 @@
+[
+  {
+    "id": "1",
+    "performanceName": "Sample Performance",
+    "description": "An example session so the list isn't empty.",
+    "performers": ["Performer One", "Performer Two"],
+    "createdAt": "2026-10-01T12:00:00.000Z"
+  }
+]

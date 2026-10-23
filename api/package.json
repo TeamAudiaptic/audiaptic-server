@@ -22,6 +22,8 @@
   },
   "homepage": "https://github.com/TeamAudiaptic/audiaptic-server#readme",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@fastify/cors": "^11.3.0",
     "@fastify/swagger": "^9.9.0",
     "@fastify/swagger-ui": "^6.1.1",
     "@fastify/websocket": "^11.3.3",
