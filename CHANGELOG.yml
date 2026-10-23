@@ -83,3 +83,13 @@ entries:
     emoji: 🐛
     label: Fix
     message: Only serializing messages once so it's easier for the client to interpret.
+- id: 7
+  pr: 36
+  author: CPW9783
+  time: '2026-10-23T21:38:17+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/36
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Performer UI, asset upload and viewing
