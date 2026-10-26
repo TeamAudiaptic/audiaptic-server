@@ -13,6 +13,9 @@ export const R2Upload = {
       400: z.object({
         error: z.string(),
       }),
+      415: z.object({
+        error: z.string(),
+      }),
       500: z.object({
         error: z.string(),
       }),
