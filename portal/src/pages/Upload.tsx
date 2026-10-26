@@ -25,6 +25,10 @@ async function uploadFile(file: File): Promise<{ success: boolean; message: stri
   }
 }
 
+function isAllowedType(file: File) {
+  return /^(audio|image|video)\//.test(file.type)
+}
+
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -38,6 +42,11 @@ function Upload() {
   const [message, setMessage] = useState('')
 
   const selectFile = (selected: File | undefined) => {
+    if (selected && !isAllowedType(selected)) {
+      setFile(null)
+      setMessage('Only audio, image, and video files can be uploaded.')
+      return
+    }
     setFile(selected ?? null)
     setMessage('')
   }
@@ -57,9 +66,14 @@ function Upload() {
     if (!file) return
 
     setUploading(true)
-    await uploadFile(file)
-    setUploading(false)
-    setMessage(`"${file.name}" is ready. It has been uploaded to the session storage.`)
+    try {
+      await uploadFile(file)
+      setMessage(`"${file.name}" is ready. It has been uploaded to the session storage.`)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -76,7 +90,7 @@ function Upload() {
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
         >
-          <input type="file" onChange={handleChange} />
+          <input type="file" accept="audio/*,image/*,video/*" onChange={handleChange} />
           {file ? (
             <span>
               <strong>{file.name}</strong> ({formatSize(file.size)})

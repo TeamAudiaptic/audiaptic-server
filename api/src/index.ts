@@ -85,6 +85,9 @@ app.register(fastifySwaggerUi, {
     routePrefix: '/api/docs',
 });
 
+// Only audio, image, and video uploads are accepted
+const ALLOWED_UPLOAD_TYPE = /^(audio|image|video)\/[\w.+-]+\s*(;|$)/i;
+
 // Upload to R2
 app.route({
     method: 'POST',
@@ -104,11 +107,16 @@ app.route({
                 return reply.status(400).send({ error: 'Missing x-filename header' });
             }
 
+            const contentType = request.headers['content-type'] || 'application/octet-stream';
+            if (!ALLOWED_UPLOAD_TYPE.test(contentType)) {
+                return reply.status(415).send({ error: 'Only audio, image, and video files can be uploaded' });
+            }
+
             const command = new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: fileName,
                 Body: fileData,
-                ContentType: request.headers['content-type'] || 'application/octet-stream',
+                ContentType: contentType,
             });
 
             const response = await s3Client.send(command);
