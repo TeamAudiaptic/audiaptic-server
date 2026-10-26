@@ -3,6 +3,7 @@ import '../style/Media.css'
 
 type MediaItem = {
   name: string
+  folder: string
   url: string
   type: string
   size: number
@@ -47,15 +48,31 @@ async function listMedia(): Promise<MediaItem[]> {
 
   const result = await response.json()
 
-  // Map the R2 response to MediaItem format
-  return result.files.map(
-    (file: { name: string; size: number }) => ({
-      name: file.name,
-      url: `${R2_BUCKET_URL}/${file.name}`,
-      type: getContentType(file.name),
-      size: file.size,
+  // Map the R2 response to MediaItem format. A folder is the key prefix before the last "/"
+  return result.files
+    .filter((file: { name: string }) => !file.name.endsWith('/'))
+    .map((file: { name: string; size: number }) => {
+      const slash = file.name.lastIndexOf('/')
+      return {
+        name: file.name.slice(slash + 1),
+        folder: slash === -1 ? '' : file.name.slice(0, slash),
+        url: `${R2_BUCKET_URL}/${file.name.split('/').map(encodeURIComponent).join('/')}`,
+        type: getContentType(file.name),
+        size: file.size,
+      }
     })
-  )
+}
+
+function groupByFolder(items: MediaItem[]): [string, MediaItem[]][] {
+  const groups = new Map<string, MediaItem[]>()
+  for (const item of items) {
+    groups.set(item.folder, [...(groups.get(item.folder) ?? []), item])
+  }
+  // Named folders alphabetically, files without a folder last
+  return [...groups.entries()].sort(([a], [b]) => {
+    if (a === '' || b === '') return a === '' ? 1 : -1
+    return a.localeCompare(b)
+  })
 }
 
 function formatSize(bytes: number) {
@@ -105,19 +122,24 @@ function Media() {
       ) : items.length === 0 ? (
         <p className="media-empty">No media uploaded yet.</p>
       ) : (
-        <ul className="media-grid">
-          {items.map((item) => (
-            <li key={item.url} className="media-card">
-              <div className="media-preview">
-                <Preview item={item} />
-              </div>
-              <div className="media-info">
-                <strong>{item.name}</strong>
-                <span>{formatSize(item.size)}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        groupByFolder(items).map(([folder, folderItems]) => (
+          <div key={folder} className="media-folder">
+            <h2>{folder || 'No session'}</h2>
+            <ul className="media-grid">
+              {folderItems.map((item) => (
+                <li key={item.url} className="media-card">
+                  <div className="media-preview">
+                    <Preview item={item} />
+                  </div>
+                  <div className="media-info">
+                    <strong>{item.name}</strong>
+                    <span>{formatSize(item.size)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
       )}
     </section>
   )
