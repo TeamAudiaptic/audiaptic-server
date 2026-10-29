@@ -2,7 +2,8 @@ import { FastifyInstance } from "fastify";
 import { addAudienceSocket, audienceCount } from "../audience.hub";
 
 export async function audienceRoute(app: FastifyInstance) {
-    app.get('/audience', { websocket: true }, (socket, request) => {
+    // 'davhi' stands in for a performance join code until joining with a code is implemented.
+    app.get('/audience/davhi', { websocket: true }, (socket, request) => {
         addAudienceSocket(socket);
         console.log(`Audience device connected. ${audienceCount()} connected.`);
 

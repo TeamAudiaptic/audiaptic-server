@@ -12,12 +12,13 @@ export default function performerEventHandler(event: EventInferredType): APIAck 
         case 'audio':
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'caption':
+            // return relayPerformerHandler(event);
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'color':
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'haptic':
-            // return relayPerformerHandler(event);
-            return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
+            return relayPerformerHandler(event);
+            // return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'image':
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'torch':

@@ -80,7 +80,8 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 messages: componentRefs(Object.keys(allMessages)),
             },
             audience: {
-                address: '/audience',
+                // 'davhi' stands in for a performance join code until joining with a code is implemented.
+                address: '/audience/davhi',
                 title: 'Audience',
                 description: 'Audience devices will receive the show events the performer sends, unchanged, once each event type is implemented. Devices send nothing back yet.',
                 messages: componentRefs(showEventNames),

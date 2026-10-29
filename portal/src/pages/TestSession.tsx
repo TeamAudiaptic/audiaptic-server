@@ -4,7 +4,8 @@ import '../style/TestSession.css'
 // Defaults to the host the portal was opened from, so a phone on the same network
 // reaches the API on this machine instead of its own localhost
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`
-const AUDIENCE_URL = `${API_URL.replace(/^http/, 'ws')}/api/audience`
+// 'davhi' stands in for a performance join code until joining with a code is implemented
+const AUDIENCE_URL = `${API_URL.replace(/^http/, 'ws')}/api/audience/davhi`
 
 const RECONNECT_DELAY_MS = 2000
 
