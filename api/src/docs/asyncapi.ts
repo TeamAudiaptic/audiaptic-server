@@ -48,6 +48,9 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
         ]),
     );
 
+    // Ping stays between the performer and the server; every other event is relayed to the audience.
+    const showEventNames = Object.keys(eventMessages).filter((name) => name !== 'pingEvent');
+
     const allMessages = { ...eventMessages, ...ackMessages };
     const componentRefs = (names: string[]) =>
         Object.fromEntries(names.map((name) => [name, { $ref: `#/components/messages/${name}` }]));
@@ -63,6 +66,7 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 'Real-time connections to the server. All sockets live under `/api`, behind the Caddy proxy.',
             tags: [
                 { name: 'performer', description: 'The performer driving the show. Will require authentication.' },
+                { name: 'audience', description: 'Audience devices receiving the show.' },
             ],
         },
         servers: {
@@ -75,7 +79,13 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 description: 'The performer sends show events; every event frame is answered with one ack.',
                 messages: componentRefs(Object.keys(allMessages)),
             },
-            // audience: { address: '/audience', ... } once that socket exists
+            audience: {
+                // 'davhi' stands in for a performance join code until joining with a code is implemented.
+                address: '/audience/davhi',
+                title: 'Audience',
+                description: 'Audience devices will receive the show events the performer sends, unchanged, once each event type is implemented. Devices send nothing back yet.',
+                messages: componentRefs(showEventNames),
+            },
         },
         operations: {
             performerSendsEvent: {
@@ -93,6 +103,14 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 channel: { $ref: '#/channels/performer' },
                 messages: channelRefs('performer', Object.keys(ackMessages)),
                 tags: [{ name: 'performer' }],
+            },
+            audienceReceivesEvent: {
+                action: 'send',
+                title: 'Receive an event',
+                summary: 'Server → audience: a show event relayed from the performer.',
+                channel: { $ref: '#/channels/audience' },
+                messages: channelRefs('audience', showEventNames),
+                tags: [{ name: 'audience' }],
             },
         },
         components: { messages: allMessages },

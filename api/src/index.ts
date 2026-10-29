@@ -11,6 +11,7 @@ import path from 'path';
 import { env } from './env.js';
 import { R2Upload, R2List, type R2UploadResponse201, type R2ListResponse200 } from './api-schemas/r2.api.schema.js';
 import { performerRoute } from './sockets/routes/performer.route';
+import { audienceRoute } from './sockets/routes/audience.route';
 import { helloWorldRoute } from './routes/helloWorld.route';
 import { buildAsyncApiSpec } from './docs/asyncapi';
 
@@ -153,6 +154,7 @@ app.route({
 // Caddy forwards /api/* to this app without stripping the prefix,
 // so every route has to live under /api too
 app.register(performerRoute, { prefix: '/api' });
+app.register(audienceRoute, { prefix: '/api' });
 app.register(helloWorldRoute, { prefix: '/api' });
 // Fastify must bind to 0.0.0.0 inside Docker containers
 const start = async () => {
