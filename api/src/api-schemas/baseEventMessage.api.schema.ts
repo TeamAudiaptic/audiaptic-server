@@ -6,6 +6,7 @@ import { APICaptionEvent } from './events/captionEvent.api.schema';
 import { APIHapticEvent } from './events/hapticEvent.api.schema';
 import { APIImageEvent } from './events/imageEvent.api.schema';
 import { APITorchEvent } from './events/torchEvent.api.schema';
+import { APIStartEvent } from './events/startEvent.api.schema';
 
 export const EventType = z.discriminatedUnion('type', [
     APIAudioEvent.route.payload,
@@ -14,6 +15,7 @@ export const EventType = z.discriminatedUnion('type', [
     APIHapticEvent.route.payload,
     APIImageEvent.route.payload,
     APIPingEvent.route.payload, // only ping works for now
+    APIStartEvent.route.payload,
     APITorchEvent.route.payload,
 ]);
 // also export its inferred type.

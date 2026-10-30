@@ -6,6 +6,7 @@ export class APITorchEvent {
   static readonly route = {
     payload: defineEvent('torch', z.object({
       durationMs: DurationMs,
+      intensity: z.number().min(0).max(1),
       transitionMs: DurationMs,
     })),
   } as const;
