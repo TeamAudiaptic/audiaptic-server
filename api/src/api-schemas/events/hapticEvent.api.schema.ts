@@ -5,7 +5,6 @@ export class APIHapticEvent {
   static readonly route = {
     payload: defineEvent('haptic', z.object({
       intensity: z.number().min(0).max(1),
-      sharpness: z.number().min(0).max(1),
       durationMs: DurationMs,
       transitionMs: DurationMs,
     })),
