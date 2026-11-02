@@ -103,3 +103,13 @@ entries:
     emoji: ✨
     label: Feature
     message: Media can be linked to performance sessions
+- id: 9
+  pr: 51
+  author: CPW9783
+  time: '2026-11-02T02:26:21+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/51
+  changes:
+  - type: refactor
+    emoji: ♻️
+    label: Refactor
+    message: Updated start event schema to match docs
