@@ -93,3 +93,13 @@ entries:
     emoji: ✨
     label: Feature
     message: Performer UI, asset upload and viewing
+- id: 8
+  pr: 46
+  author: CPW9783
+  time: '2026-11-02T02:25:45+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/46
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Media can be linked to performance sessions
