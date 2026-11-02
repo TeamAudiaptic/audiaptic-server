@@ -16,6 +16,8 @@ export default function performerEventHandler(event: EventInferredType): APIAck 
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'image':
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
+        case 'start':
+            return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         case 'torch':
             return ack(event.eventId, 422, [`Event ${event.type} is not yet implemented!`]);
         default:
