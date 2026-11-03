@@ -5,7 +5,7 @@ A distributed audio-visual-haptic performance solution.
 
 These steps let a phone connect to a server running on your computer, so you can watch events arrive on the client websocket before the mobile app has a live connection. They were tested on Windows.
 
-The only client websocket right now is hardcoded to `/api/audience/davhi` on port 3000. In the future, `davhi` will be a join code that connects the device to a specific performance.
+The client websocket is `/api/audience/{code}` on port 3000, where `{code}` is a join code. The only valid code right now is `davhi`. In the future, each performance will have its own code, and the code will connect the device to that performance.
 
 ### 1. Connect both devices to the same network
 
@@ -71,6 +71,31 @@ On your phone, go to `http://<IP Address>:5173`, or `http://<IP Address>` if you
 Open the **Test Session** tab. The page connects to `ws://<IP Address>:3000/api/audience/davhi` and should show **Connected**. The API window also logs `Audience device connected. 1 connected.`
 
 Events relayed to the audience appear on this page as they arrive, newest first, with the time each was received.
+
+#### Invalid join codes
+
+The client websocket path is `/api/audience/{code}`, where `{code}` is the performance's join code. Only `davhi` is valid for now, and codes are case-sensitive, so `DAVHI` is rejected.
+
+If the code is invalid, the server accepts the connection and then immediately closes it with:
+
+| Field | Value |
+| --- | --- |
+| Close code | `4404` |
+| Close reason | `Invalid join code` |
+
+No events are sent before the connection closes. Clients should handle this in the WebSocket close handler:
+
+```ts
+socket.onclose = (event) => {
+  if (event.code === 4404) {
+    // Show "invalid join code". Don't reconnect; the same code fails every time.
+  }
+}
+```
+
+The server closes the connection instead of refusing the WebSocket handshake with an HTTP `404`. Browsers and React Native can't read the HTTP status of a refused handshake: the client only sees a generic error and close code `1006`, the same as a network failure. A close code lets the client tell an invalid code apart from a dropped connection.
+
+To try it, connect to `ws://<IP Address>:3000/api/audience/nope`. The API window logs `Rejected audience device with invalid join code: nope`.
 
 ### Sending events end to end
 

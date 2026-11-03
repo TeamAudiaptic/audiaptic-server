@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { APIBaseEvent } from '../api-schemas/baseEvent.api.schema';
 import { EventType } from '../api-schemas/baseEventMessage.api.schema';
+import { INVALID_CODE_CLOSE } from '../sockets/routes/audience.route';
 
 // AsyncAPI's schema format is a superset of JSON Schema draft-07.
 // Drop the top-level $schema key; AsyncAPI doesn't want it on payloads.
@@ -80,10 +81,17 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 messages: componentRefs(Object.keys(allMessages)),
             },
             audience: {
-                // 'davhi' stands in for a performance join code until joining with a code is implemented.
-                address: '/audience/davhi',
+                address: '/audience/{code}',
                 title: 'Audience',
-                description: 'Audience devices will receive the show events the performer sends, unchanged, once each event type is implemented. Devices send nothing back yet.',
+                description:
+                    'Audience devices will receive the show events the performer sends, unchanged, once each event type is implemented. Devices send nothing back yet. ' +
+                    `If the join code is invalid, the server closes the socket with close code ${INVALID_CODE_CLOSE.code} and reason "${INVALID_CODE_CLOSE.reason}".`,
+                parameters: {
+                    code: {
+                        // 'davhi' stands in for a performance join code until joining with a code is implemented.
+                        description: 'The performance join code. Only `davhi` is valid for now.',
+                    },
+                },
                 messages: componentRefs(showEventNames),
             },
         },

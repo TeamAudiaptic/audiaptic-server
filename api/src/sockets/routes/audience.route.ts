@@ -1,9 +1,22 @@
 import { FastifyInstance } from "fastify";
 import { addAudienceSocket, audienceCount } from "../audience.hub";
 
+// 'davhi' stands in for a performance join code until joining with a code is implemented.
+const VALID_CODES = new Set(['davhi']);
+
+// Close codes 4000-4999 are reserved for applications. Clients read these from the close event;
+// they can't read the HTTP status of a rejected upgrade, so the socket is accepted and then closed.
+export const INVALID_CODE_CLOSE = { code: 4404, reason: 'Invalid join code' } as const;
+
 export async function audienceRoute(app: FastifyInstance) {
-    // 'davhi' stands in for a performance join code until joining with a code is implemented.
-    app.get('/audience/davhi', { websocket: true }, (socket, request) => {
+    app.get<{ Params: { code: string } }>('/audience/:code', { websocket: true }, (socket, request) => {
+        const { code } = request.params;
+        if (!VALID_CODES.has(code)) {
+            console.log(`Rejected audience device with invalid join code: ${code}`);
+            socket.close(INVALID_CODE_CLOSE.code, INVALID_CODE_CLOSE.reason);
+            return;
+        }
+
         addAudienceSocket(socket);
         console.log(`Audience device connected. ${audienceCount()} connected.`);
 
