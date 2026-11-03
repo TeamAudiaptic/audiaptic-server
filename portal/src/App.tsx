@@ -3,6 +3,7 @@ import NavBar, { type Page } from './components/NavBar.tsx'
 import Login from './pages/Login.tsx'
 import ManageSessions from './pages/ManageSessions.tsx'
 import Media from './pages/Media.tsx'
+import TestSession from './pages/TestSession.tsx'
 import Upload from './pages/Upload.tsx'
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
       {page === 'upload' && <Upload />}
       {page === 'media' && <Media />}
       {page === 'sessions' && <ManageSessions />}
+      {page === 'testSession' && <TestSession />}
     </>
   )
 }
