@@ -113,3 +113,13 @@ entries:
     emoji: ♻️
     label: Refactor
     message: Updated start event schema to match docs
+- id: 10
+  pr: 49
+  author: Josh-mitch
+  time: '2026-11-03T22:17:15+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/49
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Audience websocket created with code "davhi" and forwarding only haptic events
