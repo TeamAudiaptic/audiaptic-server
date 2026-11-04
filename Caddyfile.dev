@@ -1,4 +1,4 @@
-http://localhost {
+http://192.168.68.51 {
     handle /api/* {
         reverse_proxy host.docker.internal:3000
     }

@@ -3,9 +3,8 @@ import { defineEvent } from '../baseEvent.api.schema';
 
 export class APIStartEvent {
   static readonly route = {
-    payload: defineEvent('start', z.object({
-
-    })),
+    // Start has no payload; `{}` is still accepted so a generic event patch can send one.
+    payload: defineEvent('start', z.object({}).optional()),
   } as const;
 }
 
