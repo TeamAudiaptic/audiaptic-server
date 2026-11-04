@@ -17,20 +17,23 @@ type ReceivedEvent = {
   text: string
 }
 
-function parseEvent(key: number, data: string): ReceivedEvent {
+// The server always sends a list of events, so one message can hold several
+function parseEvents(nextKey: () => number, data: string): ReceivedEvent[] {
   const receivedAt = Date.now()
+  let parsed: unknown
   try {
-    const event = JSON.parse(data)
-    return {
-      key,
-      receivedAt,
-      type: event.type ?? 'unknown',
-      execTimestamp: typeof event.execTimestamp === 'number' ? event.execTimestamp : undefined,
-      text: JSON.stringify(event, null, 2),
-    }
+    parsed = JSON.parse(data)
   } catch {
-    return { key, receivedAt, type: 'not JSON', text: data }
+    return [{ key: nextKey(), receivedAt, type: 'not JSON', text: data }]
   }
+  const list = Array.isArray(parsed) ? parsed : [parsed]
+  return list.map((event) => ({
+    key: nextKey(),
+    receivedAt,
+    type: event?.type ?? 'unknown',
+    execTimestamp: typeof event?.execTimestamp === 'number' ? event.execTimestamp : undefined,
+    text: JSON.stringify(event, null, 2),
+  }))
 }
 
 // Acts as an audience device: connects to the audience socket and lists every event it receives
@@ -48,8 +51,9 @@ function TestSession() {
       socket = new WebSocket(AUDIENCE_URL)
       socket.onopen = () => setConnected(true)
       socket.onmessage = (message) => {
-        const received = parseEvent(nextKey++, message.data)
-        setEvents((current) => [received, ...current])
+        // Newest first, so reverse the list to keep its last event on top
+        const received = parseEvents(() => nextKey++, message.data).reverse()
+        setEvents((current) => [...received, ...current])
       }
       // Reconnect so the page survives API restarts while testing
       socket.onclose = () => {
