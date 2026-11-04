@@ -1,23 +1,37 @@
-import { ack, APIAck, UNKNOWN_EVENT_ID } from "../../../api-schemas/baseEvent.api.schema";
-import { EventInferredType } from "../../../api-schemas/baseEventMessage.api.schema";
-import pingPerformerHandler from "./ping.performer.handler";
+import { APIAck, APIAckRejection, eventsAck } from "../../../api-schemas/baseEvent.api.schema";
+import { EventInferredType, ShowEventInferredType } from "../../../api-schemas/baseEventMessage.api.schema";
 import relayPerformerHandler from "./relay.performer.handler";
 
-export default function performerEventHandler(event: EventInferredType): APIAck {
-    switch (event.type) {
-        case 'ping':
-            return pingPerformerHandler(event);
-        case 'audio':
-        case 'caption':
-        case 'color':
-        case 'haptic':
-        case 'image':
-        case 'start':
-        case 'torch':
-        case 'video':
-            return relayPerformerHandler(event);
-        default:
-            const _unreachable: never = event;
-            return ack(UNKNOWN_EVENT_ID, 400, [`Fatal error: The event type was not recognized. This should never happen!`]);
+/**
+ * Handle the valid events from one performer frame and build the frame's single ack.
+ * Show events are relayed to the audience together, in frame order, as one list.
+ */
+export default function performerEventHandler(events: EventInferredType[], rejected: APIAckRejection[]): APIAck {
+    const accepted: string[] = [];
+    const toRelay: ShowEventInferredType[] = [];
+    for (const event of events) {
+        accepted.push(event.eventId);
+        switch (event.type) {
+            // Ping only checks the connection between Max and the server, so it is never relayed.
+            case 'ping':
+                break;
+            case 'audio':
+            case 'caption':
+            case 'color':
+            case 'haptic':
+            case 'image':
+            case 'start':
+            case 'torch':
+            case 'video':
+                toRelay.push(event);
+                break;
+            default: {
+                const _unreachable: never = event;
+                break;
+            }
+        }
     }
+
+    const { deliveredTo, error } = relayPerformerHandler(toRelay);
+    return eventsAck({ accepted, rejected, relayed: toRelay.length, deliveredTo, broadcastError: error });
 }

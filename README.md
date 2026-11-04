@@ -109,6 +109,6 @@ To see events from Max on your phone:
 
    Then restart the connection patch's `node.script`; it only reads `.env` when it starts. See the [connection patch setup](https://github.com/TeamAudiaptic/audiaptic-max/tree/main/src/connection) for the rest of the Max setup.
 
-2. Make sure the event type you're sending is relayed. In [main.performer.handler.ts](api/src/sockets/handlers/performer/main.performer.handler.ts), an event type reaches the audience only when its case returns `relayPerformerHandler(event)`. Event types that the client can't act on yet return a `422` "not yet implemented" ack instead. `ping` is never relayed; it only checks the connection between Max and the server.
+2. Send an event, or a list of up to 500 events, from Max. Every valid event except `ping` is relayed to the audience as one list; `ping` only checks the connection between Max and the server.
 
-3. Send the event from Max. Max receives a `202` ack, and the event appears on the Test Session page.
+3. Check the ack Max receives. Each frame gets exactly one ack. A `202` means every event was valid and was relayed, and `deliveredTo` shows how many devices received it. A `207` or `422` lists the rejected events by `index` and `eventId`. See [Acknowledgements](https://teamaudiaptic.github.io/audiaptic-docs/docs/dev-docs/events/acknowledgements) for every status. The relayed events appear on the Test Session page as a list.
