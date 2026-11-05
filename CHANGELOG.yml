@@ -137,3 +137,13 @@ entries:
     emoji: ✨
     label: Feature
     message: Added video event type
+- id: 12
+  pr: 57
+  author: CPW9783
+  time: '2026-11-05T22:46:32+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/57
+  changes:
+  - type: refactor
+    emoji: ♻️
+    label: Refactor
+    message: Updated base event and audio schemas to match docs
