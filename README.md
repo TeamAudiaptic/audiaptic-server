@@ -1,6 +1,18 @@
 # audiaptic
 A distributed audio-visual-haptic performance solution.
 
+## Configuration
+
+The API reads these environment variables, from `api/.env` when running locally or from the environment when running in Docker. Every one has a default, so none is required for local development.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SITE_DOMAIN` | `localhost` | Host the generated API docs point at. |
+| `PORT` | `3000` | Port the API listens on. |
+| `NODE_ENV` | `development` | `development`, `production`, or `test`. |
+| `MAX_EVENTS_PER_FRAME` | `500` | Most events Max can send in one frame. Larger lists get a `422` ack. |
+| `MAX_FRAME_BYTES` | `8388608` (8 MiB) | Largest frame the performer socket accepts. A bigger frame closes the connection with code `1009`. Must be at least `MAX_EVENTS_PER_FRAME` x 8192, or the API refuses to start. |
+
 ## Testing the client websocket locally
 
 These steps let a phone connect to a server running on your computer, so you can watch events arrive on the client websocket before the mobile app has a live connection. They were tested on Windows.

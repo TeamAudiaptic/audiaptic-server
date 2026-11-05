@@ -25,9 +25,12 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=${NODE_ENV:-development} # Falls back to development locally
+      # Passed through only when set; the defaults live in api/src/env.ts
+      - MAX_EVENTS_PER_FRAME
+      - MAX_FRAME_BYTES
     networks:
       - app-net
-    
+
   davhi-portal:
     build: ./portal
     container_name: davhi-portal
