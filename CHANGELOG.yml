@@ -123,3 +123,17 @@ entries:
     emoji: ✨
     label: Feature
     message: Audience websocket created with code "davhi" and forwarding only haptic events
+- id: 11
+  pr: 54
+  author: Josh-mitch
+  time: '2026-11-05T22:42:28+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/54
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Forwarding all event types to the client now
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Added video event type
