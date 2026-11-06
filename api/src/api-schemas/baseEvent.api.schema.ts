@@ -29,7 +29,7 @@ export const eventEnvelope = {
   eventId: z.string().min(1).max(200),
   sequence: z.number().int().nonnegative(),
   sentTimestamp: EpochMs,
-  execTimestamp: EpochMs,
+  epochTimestamp: EpochMs,
   relativeTimestamp: z.number().int().nonnegative().optional(),
 } as const;
 
