@@ -147,3 +147,13 @@ entries:
     emoji: ♻️
     label: Refactor
     message: Updated base event and audio schemas to match docs
+- id: 13
+  pr: 58
+  author: CPW9783
+  time: '2026-11-06T16:38:32+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/58
+  changes:
+  - type: refactor
+    emoji: ♻️
+    label: Refactor
+    message: Non-boolean values are now coerced
