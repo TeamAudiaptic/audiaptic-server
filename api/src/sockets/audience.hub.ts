@@ -15,14 +15,13 @@ export function audienceCount() {
 }
 
 /**
- * Send already-validated events to every open audience socket as one list.
- * Devices always receive a list, even when it holds a single event.
+ * Send an already-validated event, or a list of them, to every open audience socket.
  *
  * @returns how many devices it was sent to.
  */
-export function broadcastToAudience(events: ShowEventInferredType[]): number {
+export function broadcastToAudience(frame: ShowEventInferredType | ShowEventInferredType[]): number {
     // Stringify once, not once per device.
-    const message = JSON.stringify(events);
+    const message = JSON.stringify(frame);
     let sent = 0;
     for (const socket of audienceSockets) {
         // A socket that is still connecting or already closing can't take the frame.

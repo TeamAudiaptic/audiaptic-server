@@ -34,7 +34,7 @@ describe('a failed broadcast', () => {
             eventId: 'evt-1',
             sequence: 1,
             sentTimestamp: 1,
-            execTimestamp: 2,
+            epochTimestamp: 2,
             type: 'caption' as const,
             payload: { text: 'hello' },
         };

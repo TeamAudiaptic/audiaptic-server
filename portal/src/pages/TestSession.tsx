@@ -17,7 +17,7 @@ type ReceivedEvent = {
   text: string
 }
 
-// The server always sends a list of events, so one message can hold several
+// The server sends a single event, or a list of them when the performer sent a list
 function parseEvents(nextKey: () => number, data: string): ReceivedEvent[] {
   const receivedAt = Date.now()
   let parsed: unknown

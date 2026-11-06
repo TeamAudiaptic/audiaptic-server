@@ -3,13 +3,17 @@ import { broadcastToAudience } from "../../audience.hub";
 
 export type RelayResult = { deliveredTo: number; error?: string };
 
-/** Send a frame's show events to the audience as one list. Sends nothing when there are none. */
-export default function relayPerformerHandler(events: ShowEventInferredType[]): RelayResult {
+/**
+ * Send a frame's show events to the audience. A list from the performer goes out as a list,
+ * even if only one of its events was valid; a lone event goes out as that event.
+ * Sends nothing when there are no events.
+ */
+export default function relayPerformerHandler(events: ShowEventInferredType[], isList: boolean): RelayResult {
     if (events.length === 0) {
         return { deliveredTo: 0 };
     }
     try {
-        const deliveredTo = broadcastToAudience(events);
+        const deliveredTo = broadcastToAudience(isList ? events : events[0]);
         console.log(`Relayed ${events.length} event(s) to ${deliveredTo} audience device(s).`);
         return { deliveredTo };
     } catch (error) {

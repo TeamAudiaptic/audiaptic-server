@@ -13,7 +13,7 @@ const envelope = (eventId: string, sequence = 1) => ({
     eventId,
     sequence,
     sentTimestamp: 1_730_000_000_000,
-    execTimestamp: 1_790_000_000_000,
+    epochTimestamp: 1_790_000_000_000,
 });
 const haptic = (eventId: string) => ({ ...envelope(eventId), type: 'haptic', payload: { intensity: 0.5, durationMs: 100, transitionMs: 0 } });
 const caption = (eventId: string) => ({ ...envelope(eventId), type: 'caption', payload: { text: 'hello' } });
@@ -69,10 +69,29 @@ afterEach(async () => {
 const send = (frame: unknown) => performer.send(typeof frame === 'string' ? frame : JSON.stringify(frame));
 
 describe('performer frames', () => {
-    it('relays a single event as a one-item list', async () => {
+    it('relays a single event as that event, not a list', async () => {
         send(haptic('evt-1'));
         expect(await acks.next()).toEqual({ type: 'ack', status: 202, accepted: ['evt-1'], rejected: [], deliveredTo: 1, errors: [] });
+        expect(await received.next()).toEqual(haptic('evt-1'));
+    });
+
+    it('relays a list of one event as a list', async () => {
+        send([haptic('evt-1')]);
+        expect((await acks.next()).status).toBe(202);
         expect(await received.next()).toEqual([haptic('evt-1')]);
+    });
+
+    it('relays a list as a list even when only one of its events is valid', async () => {
+        send([invalidHaptic('evt-1'), caption('evt-2')]);
+        expect((await acks.next()).status).toBe(207);
+        expect(await received.next()).toEqual([caption('evt-2')]);
+    });
+
+    it('relays nothing for an invalid single event', async () => {
+        send(invalidHaptic('evt-1'));
+        expect((await acks.next()).status).toBe(422);
+        await settle();
+        expect(received.queued).toEqual([]);
     });
 
     it('relays a valid list as one list, in frame order', async () => {
@@ -212,7 +231,7 @@ describe('performer frames', () => {
             const ack = await acks.next();
             expect(ack.status).toBe(202);
             expect(ack.deliveredTo).toBe(1);
-            expect(await received.next()).toEqual([haptic('evt-1')]);
+            expect(await received.next()).toEqual(haptic('evt-1'));
         } finally {
             // Remove it from the hub, which is shared across tests.
             closeBroken();

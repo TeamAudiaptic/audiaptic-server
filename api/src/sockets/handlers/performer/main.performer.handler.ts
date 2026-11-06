@@ -4,9 +4,10 @@ import relayPerformerHandler from "./relay.performer.handler";
 
 /**
  * Handle the valid events from one performer frame and build the frame's single ack.
- * Show events are relayed to the audience together, in frame order, as one list.
+ * Show events are relayed to the audience together, in frame order, in the form the
+ * performer sent them: a lone event as an event, a list as a list.
  */
-export default function performerEventHandler(events: EventInferredType[], rejected: APIAckRejection[]): APIAck {
+export default function performerEventHandler(events: EventInferredType[], rejected: APIAckRejection[], isList: boolean): APIAck {
     const accepted: string[] = [];
     const toRelay: ShowEventInferredType[] = [];
     for (const event of events) {
@@ -32,6 +33,6 @@ export default function performerEventHandler(events: EventInferredType[], rejec
         }
     }
 
-    const { deliveredTo, error } = relayPerformerHandler(toRelay);
+    const { deliveredTo, error } = relayPerformerHandler(toRelay, isList);
     return eventsAck({ accepted, rejected, relayed: toRelay.length, deliveredTo, broadcastError: error });
 }

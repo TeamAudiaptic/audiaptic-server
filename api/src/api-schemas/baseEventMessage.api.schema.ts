@@ -36,5 +36,8 @@ export type EventInferredType = z.infer<typeof EventType>;
  */
 export const PerformerFrame = z.union([EventType, z.array(EventType).min(1).max(MAX_EVENTS_PER_FRAME)]);
 
-/** What an audience device receives in one frame: always a list of show events. */
-export const AudienceFrame = z.array(ShowEventType).min(1).max(MAX_EVENTS_PER_FRAME);
+/**
+ * What an audience device receives in one frame: the same form the performer sent,
+ * a lone show event or a list of the valid ones.
+ */
+export const AudienceFrame = z.union([ShowEventType, z.array(ShowEventType).min(1).max(MAX_EVENTS_PER_FRAME)]);

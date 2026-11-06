@@ -21,7 +21,7 @@ export async function performerRoute(app: FastifyInstance) {
             }
 
             // Handling is synchronous, so acks go back in the same order the frames arrived.
-            send(performerEventHandler(result.events, result.rejected));
+            send(performerEventHandler(result.events, result.rejected, result.isList));
         });
     });
 }

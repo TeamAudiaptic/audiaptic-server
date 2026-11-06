@@ -51,12 +51,16 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
         payload: toSchema(APIBaseEvent.route.response),
     };
 
-    // Ping stays between the performer and the server; the audience receives the other events as a list.
+    // Ping stays between the performer and the server; the other events are relayed to the audience.
+    const showEventNames = Object.keys(eventMessages).filter((name) => name !== 'pingEvent');
+
+    // A lone event reaches the audience as the matching event message; a list as this.
     const audienceEventListMessage = {
         name: 'audience event list',
         title: 'Audience event list',
-        summary: 'Server → audience: the valid show events from one performer frame, in frame order.',
-        payload: toSchema(AudienceFrame),
+        summary: 'Server → audience: the valid show events from a performer list, in frame order.',
+        description: 'Sent when the performer sent a list, even if only one of its events was valid.',
+        payload: toSchema(AudienceFrame.options[1]),
     };
 
     const allMessages = {
@@ -98,7 +102,7 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 address: '/audience/{code}',
                 title: 'Audience',
                 description:
-                    'Audience devices receive the valid show events from each performer frame as one list, even when the performer sent a single event. Devices send nothing back yet. ' +
+                    'Audience devices receive the valid show events from each performer frame in the form the performer sent them: a single event, or a list. Devices send nothing back yet. ' +
                     `If the join code is invalid, the server closes the socket with close code ${INVALID_CODE_CLOSE.code} and reason "${INVALID_CODE_CLOSE.reason}".`,
                 parameters: {
                     code: {
@@ -106,7 +110,7 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                         description: 'The performance join code. Only `davhi` is valid for now.',
                     },
                 },
-                messages: componentRefs(['audienceEventList']),
+                messages: componentRefs([...showEventNames, 'audienceEventList']),
             },
         },
         operations: {
@@ -129,9 +133,9 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
             audienceReceivesEvent: {
                 action: 'send',
                 title: 'Receive events',
-                summary: 'Server → audience: a list of show events relayed from the performer.',
+                summary: 'Server → audience: a show event, or a list of them, relayed from the performer.',
                 channel: { $ref: '#/channels/audience' },
-                messages: channelRefs('audience', ['audienceEventList']),
+                messages: channelRefs('audience', [...showEventNames, 'audienceEventList']),
                 tags: [{ name: 'audience' }],
             },
         },

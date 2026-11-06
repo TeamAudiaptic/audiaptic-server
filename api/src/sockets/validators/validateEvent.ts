@@ -2,7 +2,8 @@ import { APIAck, APIAckRejection, eventEnvelope, frameAck, MAX_EVENTS_PER_FRAME 
 import { EventInferredType, EventType } from "../../api-schemas/baseEventMessage.api.schema";
 
 export type ValidatedFrame =
-    | { ok: true; events: EventInferredType[]; rejected: APIAckRejection[] }
+    // isList records whether the performer sent a list, so the audience receives the same form.
+    | { ok: true; events: EventInferredType[]; rejected: APIAckRejection[]; isList: boolean }
     | { ok: false; ack: APIAck };
 
 type ValidatedEvent =
@@ -27,7 +28,8 @@ export function validateFrame(raw: string): ValidatedFrame {
         return { ok: false, ack: frameAck(400, ['The frame is not valid JSON.']) };
     }
 
-    // A lone event is handled as a list of one.
+    // A lone event is validated and acked as a list of one.
+    const isList = Array.isArray(parsed);
     const items = Array.isArray(parsed) ? parsed
         : typeof parsed === 'object' && parsed !== null ? [parsed]
         : null;
@@ -49,7 +51,7 @@ export function validateFrame(raw: string): ValidatedFrame {
             rejected.push(result.rejection);
         }
     });
-    return { ok: true, events, rejected };
+    return { ok: true, events, rejected, isList };
 }
 
 /** Validate one event from a frame, recording its eventId so a later duplicate is caught. */
