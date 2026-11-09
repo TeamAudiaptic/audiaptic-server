@@ -7,7 +7,7 @@ export class APIAudioEvent {
       assetAlias: AssetAlias,
       startOffsetMs: DurationMs.optional(),
       durationMs: DurationMs.optional(),
-      loop: z.boolean().optional(),
+      loop: z.coerce.boolean().optional(),
       transitionMs: DurationMs.optional(),
     })),
   } as const;
