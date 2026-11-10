@@ -185,3 +185,13 @@ entries:
     emoji: 📝
     label: Documentation
     message: Added documentation for sending events without max
+- id: 16
+  pr: 59
+  author: TashiTseten
+  time: '2026-11-10T23:13:17+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/59
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Added New endpoint that returns the serverTimestamp which is the server's current time when requested
