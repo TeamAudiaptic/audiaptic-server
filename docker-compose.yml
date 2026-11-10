@@ -31,6 +31,10 @@ services:
       ACME_EMAIL: ${ACME_EMAIL:-}
       ACME_EAB_KEY_ID: ${ACME_EAB_KEY_ID:-}
       ACME_EAB_MAC_KEY: ${ACME_EAB_MAC_KEY:-}
+      # Required, because without them the portal and API would be open to anyone
+      PORTAL_USER: ${PORTAL_USER:?Set PORTAL_USER in .env}
+      PORTAL_PASSWORD_HASH: ${PORTAL_PASSWORD_HASH:?Set PORTAL_PASSWORD_HASH in .env}
+      PERFORMER_TOKEN: ${PERFORMER_TOKEN:?Set PERFORMER_TOKEN in .env}
     volumes:
       # Certificates and the ACME account key. If these are lost, Caddy has to
       # register again, which needs fresh EAB credentials.

@@ -56,13 +56,20 @@ main() {
     fi
 
     local var
-    for var in SITE_DOMAIN ACME_EMAIL ACME_EAB_KEY_ID ACME_EAB_MAC_KEY; do
+    for var in SITE_DOMAIN ACME_EMAIL ACME_EAB_KEY_ID ACME_EAB_MAC_KEY PORTAL_USER PORTAL_PASSWORD_HASH PERFORMER_TOKEN; do
         if [[ -z "$(env_value "$var")" ]]; then
             echo "$var is missing from .env. Copy .env.example to .env and fill it in." >&2
             notify "❌ Deploy didn't start" "$RED" "\`$var\` is missing from \`.env\` on the server."
             return 1
         fi
     done
+    # Without single quotes, Compose reads the hash's $ signs as variables and
+    # mangles it, and then nobody can log in
+    if ! grep -qE "^PORTAL_PASSWORD_HASH='[\$]2[aby]?[\$]" .env; then
+        echo "PORTAL_PASSWORD_HASH in .env must be the output of caddy hash-password, in single quotes." >&2
+        notify "❌ Deploy didn't start" "$RED" "\`PORTAL_PASSWORD_HASH\` in \`.env\` must be the output of \`caddy hash-password\`, in single quotes."
+        return 1
+    fi
 
     local deployed target
     deployed=$(cat "$STATE/deployed" 2>/dev/null || true)

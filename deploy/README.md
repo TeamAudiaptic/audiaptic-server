@@ -16,7 +16,7 @@ The stack is two containers, defined in [docker-compose.yml](../docker-compose.y
 
 | Container | What it does |
 | --- | --- |
-| `caddy` | Serves the built portal, proxies `/api/*` (including websockets) to the API, and gets the TLS certificate from [RIT's ACME server](https://acme.rit.edu). Runs as the unprivileged `caddy` user. |
+| `caddy` | Serves the built portal, proxies `/api/*` (including websockets) to the API, and gets the TLS certificate from [RIT's ACME server](https://acme.rit.edu). Asks for the portal password, except on the audience and performer websockets. Runs as the unprivileged `caddy` user. |
 | `davhi-api` | The Fastify API. It isn't published on any port, so only Caddy can reach it. Runs as the unprivileged `node` user. |
 
 ## One-time setup
@@ -56,6 +56,15 @@ sudo bash /opt/audiaptic-server/deploy/install.sh
 
 ### 4. Fill in `.env`
 
+First make the portal password's hash and the performer token:
+
+```bash
+sudo docker run --rm -it caddy:2-alpine caddy hash-password   # type the portal password twice
+openssl rand -hex 32                                           # the performer token
+```
+
+Then fill in `.env`:
+
 ```bash
 sudo nano /opt/audiaptic-server/.env
 ```
@@ -65,19 +74,24 @@ sudo nano /opt/audiaptic-server/.env
 | `ACME_EMAIL` | Your RIT email |
 | `ACME_EAB_KEY_ID` | The Key ID from CertifiCat |
 | `ACME_EAB_MAC_KEY` | The HMAC key from CertifiCat |
+| `PORTAL_USER` | The username for the portal login |
+| `PORTAL_PASSWORD_HASH` | The `hash-password` output, in single quotes: `'$2a$14$...'` |
+| `PERFORMER_TOKEN` | The `openssl` output |
 | `DISCORD_WEBHOOK_URL` | The channel's webhook URL |
 | `CLOUDFLARE_*`, `R2_BUCKET_NAME`, `VITE_R2_BUCKET_URL` | The R2 settings |
 
-Write values as plain text, without quotes. Only `.env` ever holds these values. Don't put them in the Caddyfile, `docker-compose.yml`, or GitHub. Docker Compose reads `.env` and passes each value to the container that needs it.
+Write values as plain text, without quotes, except `PORTAL_PASSWORD_HASH`. Its `$` signs need the single quotes, or Compose reads them as variables. Only `.env` ever holds these values. Don't put them in the Caddyfile, `docker-compose.yml`, or GitHub. Docker Compose reads `.env` and passes each value to the container that needs it.
+
+To change the password or token later, edit `.env` and run `audiaptic-redeploy`.
 
 ### 5. Deploy for the first time
 
 ```bash
 audiaptic-redeploy
-curl https://davhi.se.rit.edu/api/
+curl -u <PORTAL_USER> https://davhi.se.rit.edu/api/
 ```
 
-The `curl` should print `{"message":"Hello, world!"}`, and Discord should show a **✅ Deployed** message.
+The `curl` asks for the portal password, then should print `{"message":"Hello, world!"}`. Discord should show a **✅ Deployed** message.
 
 ## Day to day
 
@@ -101,6 +115,9 @@ Don't edit files in `/opt/audiaptic-server` by hand. Each deploy force-checks-ou
 
 ## Connecting clients
 
-- **Portal:** `https://davhi.se.rit.edu`
-- **Performer websocket (Max):** `wss://davhi.se.rit.edu/api/performer`
-- **Audience websocket:** `wss://davhi.se.rit.edu/api/audience/{code}`
+- **Portal:** `https://davhi.se.rit.edu`. The browser asks for `PORTAL_USER` and the portal password, then the portal shows its own login page.
+- **Performer websocket (Max):** `wss://davhi.se.rit.edu/api/performer?token=<PERFORMER_TOKEN>`. Without the right token, the connection is refused with a 401.
+- **Audience websocket:** `wss://davhi.se.rit.edu/api/audience/{code}`. No password needed.
+- **Anything else under `/api`**, such as `curl` or `/api/docs`, needs the portal login: `curl -u <PORTAL_USER> https://davhi.se.rit.edu/api/...`
+
+The password is a stopgap. The portal's own login page only checks in the browser, and the API doesn't check logins yet.

@@ -22,17 +22,45 @@
 
 {$SITE_DOMAIN} {
 	# The API's routes, including its websockets, are registered under /api,
-	# so the prefix is passed through as is
-	handle /api/* {
+	# so the prefix is passed through as is.
+
+	# Audience devices join without a password
+	@audience path /api/audience/*
+	handle @audience {
 		reverse_proxy davhi-api:3000
 	}
 
-	# Everything else is the portal. Unknown paths fall back to index.html so
-	# the portal's client-side routes survive a page reload.
+	# Max may not be able to send a password, so the performer proves itself
+	# with a secret token in the URL instead: /api/performer?token=<token>.
+	# Without the right token, the request falls through to the password below.
+	@performer {
+		path /api/performer
+		query token={$PERFORMER_TOKEN}
+	}
+	handle @performer {
+		# Keep the token out of the API's request logs
+		uri query -token
+		reverse_proxy davhi-api:3000
+	}
+
+	# Everything else, the portal and the rest of the API, needs the portal
+	# password. This is a stopgap until the API checks logins itself.
 	handle {
-		root * /srv
-		encode zstd gzip
-		try_files {path} /index.html
-		file_server
+		basic_auth {
+			{$PORTAL_USER} {$PORTAL_PASSWORD_HASH}
+		}
+
+		handle /api/* {
+			reverse_proxy davhi-api:3000
+		}
+
+		# The portal. Unknown paths fall back to index.html so the portal's
+		# client-side routes survive a page reload.
+		handle {
+			root * /srv
+			encode zstd gzip
+			try_files {path} /index.html
+			file_server
+		}
 	}
 }
