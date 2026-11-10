@@ -157,3 +157,13 @@ entries:
     emoji: ♻️
     label: Refactor
     message: Non-boolean values are now coerced
+- id: 14
+  pr: 55
+  author: Josh-mitch
+  time: '2026-11-10T14:47:15+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/55
+  changes:
+  - type: refactor
+    emoji: ♻️
+    label: Refactor
+    message: Support for sending a list of events.
