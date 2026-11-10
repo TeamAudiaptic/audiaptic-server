@@ -14,12 +14,27 @@ import { performerRoute } from './sockets/routes/performer.route';
 import { audienceRoute } from './sockets/routes/audience.route';
 import { helloWorldRoute } from './routes/helloWorld.route';
 import { buildAsyncApiSpec } from './docs/asyncapi';
+import { timeRoute } from './routes/time.route';
+
+declare module 'fastify' {
+    interface FastifyRequest {
+        serverTimestamp: number;
+    }
+}
 
 const isProd = env.NODE_ENV === 'production';
 
 const app = Fastify({
     logger: true,
 }).withTypeProvider<ZodTypeProvider>();
+
+app.decorateRequest('serverTimestamp', 0);
+app.addHook('onRequest', async (request) => {
+    // Unix epoch milliseconds when Fastify starts processing the request.
+    request.serverTimestamp = Date.now();
+});
+
+app.register(timeRoute, { prefix: '/api' });
 
 // Add CORS before other plugins
 app.register(fastifyCors, {
