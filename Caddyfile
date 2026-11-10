@@ -1,11 +1,38 @@
-# davhi-api goes to 3000 (domain.xyz/api/)
-# davhi-portal goes to 3000 (domain.xyz/)
+# Production config for davhi.se.rit.edu. portal/Dockerfile bakes it into the
+# web image, so a change here deploys with the next commit to main.
+# Local development uses Caddyfile.dev instead.
+#
+# {$...} values come from .env on the server; see .env.example.
+{
+	# Certificates come from RIT's ACME server, which requires External
+	# Account Binding (EAB). Caddy uses the EAB credentials once, to register
+	# its ACME account, and keeps the account key in the caddy_data volume.
+	email {$ACME_EMAIL}
+	acme_ca https://acme.rit.edu/directory
+	acme_eab {
+		key_id {$ACME_EAB_KEY_ID}
+		mac_key {$ACME_EAB_MAC_KEY}
+	}
 
-{SITE_DOMAIN:localhost} {
-    route /api/* {
-        reverse_proxy davhi-api:3000
-    }
-    route /* {
-        reverse_proxy davhi-portal:3000
-    }
+	# Only TCP 80 and 443 are published, so don't advertise HTTP/3, which uses UDP
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$SITE_DOMAIN} {
+	# The API's routes, including its websockets, are registered under /api,
+	# so the prefix is passed through as is
+	handle /api/* {
+		reverse_proxy davhi-api:3000
+	}
+
+	# Everything else is the portal. Unknown paths fall back to index.html so
+	# the portal's client-side routes survive a page reload.
+	handle {
+		root * /srv
+		encode zstd gzip
+		try_files {path} /index.html
+		file_server
+	}
 }

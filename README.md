@@ -1,6 +1,10 @@
 # audiaptic
 A distributed audio-visual-haptic performance solution.
 
+## Deployment
+
+Production runs on [davhi.se.rit.edu](https://davhi.se.rit.edu). It redeploys from `main` every night at midnight Eastern, and on demand with `audiaptic-redeploy` on the server. See [deploy/README.md](deploy/README.md) for setup and day-to-day commands.
+
 ## Configuration
 
 The API reads these environment variables, from `api/.env` when running locally or from the environment when running in Docker. Every one has a default, so none is required for local development.

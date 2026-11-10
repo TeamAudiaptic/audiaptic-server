@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: api/package-lock.json
 
@@ -32,3 +32,18 @@ jobs:
 
       - name: Run Tests
         run: npm test
+
+  docker-build:
+    name: Build production images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The same build davhi runs on deploy: it compiles and tests the API and
+      # builds the portal into the Caddy image. A PR that breaks it would never
+      # deploy, so catch that here before it merges.
+      - name: Build images
+        run: |
+          cp .env.example .env
+          docker compose build

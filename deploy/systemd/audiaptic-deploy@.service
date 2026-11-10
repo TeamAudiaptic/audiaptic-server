@@ -1,0 +1,18 @@
+[Unit]
+Description=Deploy the latest audiaptic-server main (%I)
+Documentation=https://github.com/TeamAudiaptic/audiaptic-server/blob/main/deploy/README.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=audiaptic
+Group=audiaptic
+WorkingDirectory=/opt/audiaptic-server
+# The instance name says who asked for the deploy: "nightly" for the timer, or
+# the username of whoever ran audiaptic-redeploy. It shows in Discord.
+Environment=DEPLOY_TRIGGER=%I
+ExecStart=/bin/bash /opt/audiaptic-server/deploy/deploy.sh
+# A first build downloads base images and every npm package
+TimeoutStartSec=30min
