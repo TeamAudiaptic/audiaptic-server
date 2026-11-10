@@ -5,9 +5,9 @@ import { z } from 'zod';
 //
 // Two things differ from a REST schema:
 //   - `payload` instead of `body`, since a socket frame has no HTTP body.
-//   - the response keys are the ack status codes from the handshake strategy
-//     (200/202/400/422/500) rather than HTTP statuses, because every inbound event
-//     is answered with one ack.
+//   - the response is a single ack whose `status` field carries the outcome
+//     (200/202/207/400/422/500) rather than an HTTP status, because every inbound
+//     frame, whether one event or a list, is answered with exactly one ack.
 
 /** Milliseconds since the Unix epoch. */
 const EpochMs = z.number().int().nonnegative();
@@ -28,7 +28,7 @@ export const eventEnvelope = {
   eventId: z.string().min(1).max(200),
   sequence: z.number().int().nonnegative(),
   sentTimestamp: EpochMs,
-  epochTimestamp: EpochMs,
+  epochTimestamp: EpochMs.nullish(),
   relativeTimestamp: z.number().int().nonnegative().optional(),
 } as const;
 
@@ -47,6 +47,15 @@ export const defineEvent = <const T extends string, P extends z.ZodTypeAny>(
   payload: P,
 ) => z.object({ ...eventEnvelope, type: z.literal(type), payload }).strict();
 
+/** One event the server refused, located by its position in the frame. */
+export const AckRejection = z.object({
+  // Zero-based position in the frame; a lone event is index 0.
+  index: z.number().int().nonnegative(),
+  // null when the event's eventId couldn't be read.
+  eventId: z.string().nullable(),
+  errors: z.array(z.string()),
+});
+
 export class APIBaseEvent {
   static readonly route = {
     // The envelope the composer sends. Concrete event schemas narrow `type`
@@ -56,67 +65,59 @@ export class APIBaseEvent {
       type: z.string(),
       data: z.unknown(),
     }),
-    // The ack the server sends back after processing the event.
-    response: {
-      // Understood.
-      200: z.object({
-        type: z.literal('ack'),
-        eventId: z.string(),
-        status: z.literal(200),
-      }),
-      // Accepted and fanned out to devices.
-      202: z.object({
-        type: z.literal('ack'),
-        eventId: z.string(),
-        status: z.literal(202),
-      }),
-      // Not parseable as JSON.
-      400: z.object({
-        type: z.literal('ack'),
-        eventId: z.string(),
-        status: z.literal(400),
-        error: z.array(z.string()),
-      }),
-      // Well-formed, but invalid for the schema or the session.
-      422: z.object({
-        type: z.literal('ack'),
-        eventId: z.string(),
-        status: z.literal(422),
-        error: z.array(z.string()),
-      }),
-      // Accepted but we failed to distribute it.
-      500: z.object({
-        type: z.literal('ack'),
-        eventId: z.string(),
-        status: z.literal(500),
-        error: z.array(z.string()),
-      }),
-    },
+    // The one ack the server sends back for each frame, whether it held one event or a list.
+    response: z.object({
+      type: z.literal('ack'),
+      status: z.literal([200, 202, 207, 400, 422, 500]),
+      // eventIds that passed validation, in frame order. Includes pings, which are never relayed.
+      accepted: z.array(z.string()),
+      rejected: z.array(AckRejection),
+      // How many audience devices the frame was sent to.
+      deliveredTo: z.number().int().nonnegative(),
+      // Problems with the frame as a whole rather than with one event.
+      errors: z.array(z.string()),
+    }),
   } as const;
 }
 
 export type APIBaseEventPayload = z.infer<typeof APIBaseEvent.route.payload>;
-export type APIBaseEventResponse200 = z.infer<typeof APIBaseEvent.route.response[200]>;
-export type APIBaseEventResponse202 = z.infer<typeof APIBaseEvent.route.response[202]>;
-export type APIBaseEventResponse400 = z.infer<typeof APIBaseEvent.route.response[400]>;
-export type APIBaseEventResponse422 = z.infer<typeof APIBaseEvent.route.response[422]>;
-export type APIBaseEventResponse500 = z.infer<typeof APIBaseEvent.route.response[500]>;
+export type APIAck = z.infer<typeof APIBaseEvent.route.response>;
+export type APIAckStatus = APIAck['status'];
+export type APIAckRejection = z.infer<typeof AckRejection>;
 
-/** Any ack, whatever the status. */
-export type APIAck =
-  | APIBaseEventResponse200
-  | APIBaseEventResponse202
-  | APIBaseEventResponse400
-  | APIBaseEventResponse422
-  | APIBaseEventResponse500;
+/** What each status means. Mirrors the status table in the docs' Acknowledgements page. */
+export const ackStatusSummaries: Record<APIAckStatus, string> = {
+  200: 'Every event was valid, and there was nothing to relay (for example, only pings).',
+  202: 'Every event was valid, and the show events were relayed.',
+  207: 'Partial success: the valid show events were relayed, and the invalid ones are listed in `rejected`.',
+  400: 'The frame is not valid JSON.',
+  422: 'The frame is not an event or a non-empty list of events, or no event in it is valid. Nothing was relayed.',
+  500: 'The events were valid, but the server failed to send them to the audience.',
+};
 
-/** Used when eventId can't be recovered from a malformed frame. */
-export const UNKNOWN_EVENT_ID = 'unknown';
+/** Ack for a frame that couldn't be read as events at all, so nothing in it was processed. */
+export function frameAck(status: 400 | 422, errors: string[]): APIAck {
+  return { type: 'ack', status, accepted: [], rejected: [], deliveredTo: 0, errors };
+}
 
-export function ack(eventId: string, status: 200 | 202): APIBaseEventResponse200 | APIBaseEventResponse202;
-export function ack(eventId: string, status: 400 | 422 | 500, error: string[]): APIAck;
-export function ack(eventId: string, status: 200 | 202 | 400 | 422 | 500, error?: string[]): APIAck {
-  return status === 200 || status === 202
-    ? { type: 'ack', eventId, status }
-    : { type: 'ack', eventId, status, error: error ?? [] } as APIAck;
+/**
+ * Ack for a frame whose events were read. The status follows the order in the
+ * docs: nothing valid (422), failed broadcast (500), partial (207), relayed (202),
+ * nothing to relay (200).
+ */
+export function eventsAck(result: {
+  accepted: string[];
+  rejected: APIAckRejection[];
+  relayed: number;
+  deliveredTo: number;
+  broadcastError?: string;
+}): APIAck {
+  const { accepted, rejected, relayed, deliveredTo, broadcastError } = result;
+  const status: APIAckStatus =
+    accepted.length === 0 ? 422
+    : broadcastError ? 500
+    : rejected.length > 0 ? 207
+    : relayed > 0 ? 202
+    : 200;
+  return { type: 'ack', status, accepted, rejected, deliveredTo, errors: broadcastError ? [broadcastError] : [] };
 }

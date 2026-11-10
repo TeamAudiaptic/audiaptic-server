@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { APIBaseEvent } from '../api-schemas/baseEvent.api.schema';
-import { EventType } from '../api-schemas/baseEventMessage.api.schema';
+import { ackStatusSummaries, APIBaseEvent } from '../api-schemas/baseEvent.api.schema';
+import { AudienceFrame, EventType } from '../api-schemas/baseEventMessage.api.schema';
 import { INVALID_CODE_CLOSE } from '../sockets/routes/audience.route';
 
 // AsyncAPI's schema format is a superset of JSON Schema draft-07.
@@ -10,14 +10,10 @@ const toSchema = (schema: z.ZodType) => {
     return rest;
 };
 
-// Mirrors the comments on APIBaseEvent.route.response.
-const ackSummaries: Record<keyof typeof APIBaseEvent.route.response, string> = {
-    200: 'Understood.',
-    202: 'Accepted and fanned out to devices.',
-    400: 'The frame was not parseable as JSON.',
-    422: 'Well-formed, but invalid for the schema or the session.',
-    500: 'Accepted, but the server failed to distribute it.',
-};
+// The status list, checked in this order; the first that applies is the ack's status.
+const ackStatusDescription = ([400, 422, 500, 207, 202, 200] as const)
+    .map((status) => `- \`${status}\`: ${ackStatusSummaries[status]}`)
+    .join('\n');
 
 /**
  * Build the AsyncAPI document for the WebSocket routes.
@@ -29,6 +25,7 @@ const ackSummaries: Record<keyof typeof APIBaseEvent.route.response, string> = {
  */
 export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
     // One message per event type: pingEvent, hapticEvent, ...
+    // Each can be sent alone or inside an eventList.
     const eventMessages = Object.fromEntries(
         EventType.options.map((event) => {
             const type = event.shape.type.value;
@@ -36,23 +33,42 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
         }),
     );
 
-    // One message per ack status: ack200, ack202, ...
-    const ackMessages = Object.fromEntries(
-        Object.entries(APIBaseEvent.route.response).map(([status, schema]) => [
-            `ack${status}`,
-            {
-                name: `ack ${status}`,
-                title: `Ack ${status}`,
-                summary: ackSummaries[Number(status) as keyof typeof ackSummaries],
-                payload: toSchema(schema),
-            },
-        ]),
-    );
+    const eventListMessage = {
+        name: 'event list',
+        title: 'Event list',
+        summary: 'Performer → server: a non-empty list of events in one frame.',
+        description:
+            'Each event is validated on its own, so valid events are relayed even when others are rejected. ' +
+            'An eventId already used earlier in the same frame is rejected.',
+        payload: toSchema(EventType.array().min(1)),
+    };
 
-    // Ping stays between the performer and the server; every other event is relayed to the audience.
+    const ackMessage = {
+        name: 'ack',
+        title: 'Ack',
+        summary: 'Server → performer: exactly one ack per frame, whether it held one event or a list.',
+        description: `The status is the first of these that applies:\n\n${ackStatusDescription}`,
+        payload: toSchema(APIBaseEvent.route.response),
+    };
+
+    // Ping stays between the performer and the server; the other events are relayed to the audience.
     const showEventNames = Object.keys(eventMessages).filter((name) => name !== 'pingEvent');
 
-    const allMessages = { ...eventMessages, ...ackMessages };
+    // A lone event reaches the audience as the matching event message; a list as this.
+    const audienceEventListMessage = {
+        name: 'audience event list',
+        title: 'Audience event list',
+        summary: 'Server → audience: the valid show events from a performer list, in frame order.',
+        description: 'Sent when the performer sent a list, even if only one of its events was valid.',
+        payload: toSchema(AudienceFrame.options[1]),
+    };
+
+    const allMessages = {
+        ...eventMessages,
+        eventList: eventListMessage,
+        ack: ackMessage,
+        audienceEventList: audienceEventListMessage,
+    };
     const componentRefs = (names: string[]) =>
         Object.fromEntries(names.map((name) => [name, { $ref: `#/components/messages/${name}` }]));
     const channelRefs = (channel: string, names: string[]) =>
@@ -77,14 +93,17 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
             performer: {
                 address: '/performer',
                 title: 'Performer',
-                description: 'The performer sends show events; every event frame is answered with one ack.',
-                messages: componentRefs(Object.keys(allMessages)),
+                description:
+                    'The performer sends one event or a list of events per frame; every frame is answered with exactly one ack, ' +
+                    'in the order the frames arrived. The server sets no event or size limit of its own; a frame over the WebSocket ' +
+                    'library\'s 100 MiB default closes the socket with close code 1009 instead of being acked.',
+                messages: componentRefs([...Object.keys(eventMessages), 'eventList', 'ack']),
             },
             audience: {
                 address: '/audience/{code}',
                 title: 'Audience',
                 description:
-                    'Audience devices will receive the show events the performer sends, unchanged, once each event type is implemented. Devices send nothing back yet. ' +
+                    'Audience devices receive the valid show events from each performer frame in the form the performer sent them: a single event, or a list. Devices send nothing back yet. ' +
                     `If the join code is invalid, the server closes the socket with close code ${INVALID_CODE_CLOSE.code} and reason "${INVALID_CODE_CLOSE.reason}".`,
                 parameters: {
                     code: {
@@ -92,32 +111,32 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                         description: 'The performance join code. Only `davhi` is valid for now.',
                     },
                 },
-                messages: componentRefs(showEventNames),
+                messages: componentRefs([...showEventNames, 'audienceEventList']),
             },
         },
         operations: {
             performerSendsEvent: {
                 action: 'receive',
-                title: 'Send an event',
-                summary: 'Performer → server: a show event.',
+                title: 'Send events',
+                summary: 'Performer → server: one event, or a list of events.',
                 channel: { $ref: '#/channels/performer' },
-                messages: channelRefs('performer', Object.keys(eventMessages)),
+                messages: channelRefs('performer', [...Object.keys(eventMessages), 'eventList']),
                 tags: [{ name: 'performer' }],
             },
             performerReceivesAck: {
                 action: 'send',
                 title: 'Receive an ack',
-                summary: 'Server → performer: exactly one ack per event frame.',
+                summary: 'Server → performer: exactly one ack per frame.',
                 channel: { $ref: '#/channels/performer' },
-                messages: channelRefs('performer', Object.keys(ackMessages)),
+                messages: channelRefs('performer', ['ack']),
                 tags: [{ name: 'performer' }],
             },
             audienceReceivesEvent: {
                 action: 'send',
-                title: 'Receive an event',
-                summary: 'Server → audience: a show event relayed from the performer.',
+                title: 'Receive events',
+                summary: 'Server → audience: a show event, or a list of them, relayed from the performer.',
                 channel: { $ref: '#/channels/audience' },
-                messages: channelRefs('audience', showEventNames),
+                messages: channelRefs('audience', [...showEventNames, 'audienceEventList']),
                 tags: [{ name: 'audience' }],
             },
         },
