@@ -1,4 +1,4 @@
-import { APIAck, APIAckRejection, eventEnvelope, frameAck, MAX_EVENTS_PER_FRAME } from "../../api-schemas/baseEvent.api.schema";
+import { APIAck, APIAckRejection, eventEnvelope, frameAck } from "../../api-schemas/baseEvent.api.schema";
 import { EventInferredType, EventType } from "../../api-schemas/baseEventMessage.api.schema";
 
 export type ValidatedFrame =
@@ -11,14 +11,14 @@ type ValidatedEvent =
     | { ok: false; rejection: APIAckRejection };
 
 /**
- * Validate a raw performer frame: a single event or a list of 1-500 events.
+ * Validate a raw performer frame: a single event or a non-empty list of events.
  *
  * Each event is validated on its own, so one bad event doesn't stop the rest.
  * Within the frame, an eventId already used by an earlier event is rejected.
  *
  * @returns the valid events (in frame order) and the rejections, or the ack to
  * send back when the frame can't be read as events at all:
- * 400 if it isn't JSON, 422 if it isn't an event or a list of the right length.
+ * 400 if it isn't JSON, 422 if it isn't an event or a non-empty list.
  */
 export function validateFrame(raw: string): ValidatedFrame {
     let parsed: unknown;
@@ -36,8 +36,8 @@ export function validateFrame(raw: string): ValidatedFrame {
     if (items === null) {
         return { ok: false, ack: frameAck(422, ['A frame must be an event object or a list of event objects.']) };
     }
-    if (items.length === 0 || items.length > MAX_EVENTS_PER_FRAME) {
-        return { ok: false, ack: frameAck(422, [`A frame must contain between 1 and ${MAX_EVENTS_PER_FRAME} events.`]) };
+    if (items.length === 0) {
+        return { ok: false, ack: frameAck(422, ['A frame must contain at least one event.']) };
     }
 
     const events: EventInferredType[] = [];

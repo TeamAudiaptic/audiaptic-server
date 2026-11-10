@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ackStatusSummaries, APIBaseEvent, MAX_EVENTS_PER_FRAME, MAX_FRAME_BYTES } from '../api-schemas/baseEvent.api.schema';
+import { ackStatusSummaries, APIBaseEvent } from '../api-schemas/baseEvent.api.schema';
 import { AudienceFrame, EventType } from '../api-schemas/baseEventMessage.api.schema';
 import { INVALID_CODE_CLOSE } from '../sockets/routes/audience.route';
 
@@ -36,11 +36,11 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
     const eventListMessage = {
         name: 'event list',
         title: 'Event list',
-        summary: `Performer → server: a list of 1-${MAX_EVENTS_PER_FRAME} events in one frame.`,
+        summary: 'Performer → server: a non-empty list of events in one frame.',
         description:
             'Each event is validated on its own, so valid events are relayed even when others are rejected. ' +
             'An eventId already used earlier in the same frame is rejected.',
-        payload: toSchema(EventType.array().min(1).max(MAX_EVENTS_PER_FRAME)),
+        payload: toSchema(EventType.array().min(1)),
     };
 
     const ackMessage = {
@@ -94,8 +94,9 @@ export function buildAsyncApiSpec(host: string, protocol: 'ws' | 'wss') {
                 address: '/performer',
                 title: 'Performer',
                 description:
-                    `The performer sends one event or a list of up to ${MAX_EVENTS_PER_FRAME} events per frame; every frame is answered with exactly one ack, ` +
-                    `in the order the frames arrived. A frame larger than ${MAX_FRAME_BYTES} bytes closes the socket with close code 1009 instead of being acked.`,
+                    'The performer sends one event or a list of events per frame; every frame is answered with exactly one ack, ' +
+                    'in the order the frames arrived. The server sets no event or size limit of its own; a frame over the WebSocket ' +
+                    'library\'s 100 MiB default closes the socket with close code 1009 instead of being acked.',
                 messages: componentRefs([...Object.keys(eventMessages), 'eventList', 'ack']),
             },
             audience: {

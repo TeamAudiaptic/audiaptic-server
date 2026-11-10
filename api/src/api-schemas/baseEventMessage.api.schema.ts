@@ -9,8 +9,6 @@ import { APITorchEvent } from './events/torchEvent.api.schema';
 import { APIStartEvent } from './events/startEvent.api.schema';
 import { APIVideoEvent } from './events/videoEvent.api.schema';
 
-import { MAX_EVENTS_PER_FRAME } from './baseEvent.api.schema';
-
 // Show events are relayed to the audience; ping stays between the performer and the server.
 const showEvents = [
     APIAudioEvent.route.payload,
@@ -31,13 +29,7 @@ export const EventType = z.discriminatedUnion('type', [...showEvents, APIPingEve
 export type EventInferredType = z.infer<typeof EventType>;
 
 /**
- * What the performer sends in one frame: a single event or a list of them. Used for the
- * AsyncAPI docs; validateFrame checks a frame event by event so one bad event isn't fatal.
- */
-export const PerformerFrame = z.union([EventType, z.array(EventType).min(1).max(MAX_EVENTS_PER_FRAME)]);
-
-/**
  * What an audience device receives in one frame: the same form the performer sent,
  * a lone show event or a list of the valid ones.
  */
-export const AudienceFrame = z.union([ShowEventType, z.array(ShowEventType).min(1).max(MAX_EVENTS_PER_FRAME)]);
+export const AudienceFrame = z.union([ShowEventType, z.array(ShowEventType).min(1)]);

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { env } from '../env.js';
 // This one's a little different because it's a websocket event, not a REST API route.
 // But the same principles apply: we define the schema for the event's payload and response,
 // and then we can use Zod to validate incoming data and infer TypeScript types.
@@ -48,17 +47,6 @@ export const defineEvent = <const T extends string, P extends z.ZodTypeAny>(
   payload: P,
 ) => z.object({ ...eventEnvelope, type: z.literal(type), payload }).strict();
 
-/** The most events one frame can carry. Set with the MAX_EVENTS_PER_FRAME environment variable. */
-export const MAX_EVENTS_PER_FRAME = env.MAX_EVENTS_PER_FRAME;
-
-/**
- * The largest frame the socket accepts. A bigger frame closes the connection with code 1009.
- * This only protects the server from a runaway frame: env.ts keeps it above the largest valid
- * frame, so MAX_EVENTS_PER_FRAME is the limit a performer actually reaches.
- * Set with the MAX_FRAME_BYTES environment variable.
- */
-export const MAX_FRAME_BYTES = env.MAX_FRAME_BYTES;
-
 /** One event the server refused, located by its position in the frame. */
 export const AckRejection = z.object({
   // Zero-based position in the frame; a lone event is index 0.
@@ -103,7 +91,7 @@ export const ackStatusSummaries: Record<APIAckStatus, string> = {
   202: 'Every event was valid, and the show events were relayed.',
   207: 'Partial success: the valid show events were relayed, and the invalid ones are listed in `rejected`.',
   400: 'The frame is not valid JSON.',
-  422: `The frame is not an event or a list of 1-${MAX_EVENTS_PER_FRAME} events, or no event in it is valid. Nothing was relayed.`,
+  422: 'The frame is not an event or a non-empty list of events, or no event in it is valid. Nothing was relayed.',
   500: 'The events were valid, but the server failed to send them to the audience.',
 };
 

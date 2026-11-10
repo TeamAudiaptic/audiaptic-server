@@ -14,7 +14,6 @@ import { performerRoute } from './sockets/routes/performer.route';
 import { audienceRoute } from './sockets/routes/audience.route';
 import { helloWorldRoute } from './routes/helloWorld.route';
 import { buildAsyncApiSpec } from './docs/asyncapi';
-import { MAX_FRAME_BYTES } from './api-schemas/baseEvent.api.schema';
 
 const isProd = env.NODE_ENV === 'production';
 
@@ -61,8 +60,9 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
-// A frame over the limit closes the socket with code 1009 instead of being acked.
-app.register(fastifyWebsocket, { options: { maxPayload: MAX_FRAME_BYTES } });
+// No frame size limit of our own: ws's 100 MiB maxPayload default applies,
+// and a bigger frame closes the socket with code 1009 instead of being acked.
+app.register(fastifyWebsocket);
 // 1. Register the core Swagger plugin
 app.register(fastifySwagger, {
     openapi: {

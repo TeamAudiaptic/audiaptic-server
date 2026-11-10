@@ -2,7 +2,6 @@ import Fastify, { FastifyInstance } from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
 import type { WebSocket } from 'ws';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_EVENTS_PER_FRAME, MAX_FRAME_BYTES } from '../src/api-schemas/baseEvent.api.schema';
 import { addAudienceSocket } from '../src/sockets/audience.hub';
 import { audienceRoute } from '../src/sockets/routes/audience.route';
 import { performerRoute } from '../src/sockets/routes/performer.route';
@@ -50,7 +49,7 @@ let received: ReturnType<typeof inbox>;
 
 beforeEach(async () => {
     app = Fastify();
-    await app.register(fastifyWebsocket, { options: { maxPayload: MAX_FRAME_BYTES } });
+    await app.register(fastifyWebsocket);
     await app.register(performerRoute, { prefix: '/api' });
     await app.register(audienceRoute, { prefix: '/api' });
     await app.ready();
@@ -166,7 +165,6 @@ describe('performer frames', () => {
 
     it.each([
         ['an empty list', []],
-        ['a list over the limit', Array.from({ length: MAX_EVENTS_PER_FRAME + 1 }, (_, i) => ping(`evt-${i}`))],
         ['a value that is not an event or a list', 42],
         ['null', null],
     ])('rejects %s as a whole frame with 422', async (_name, frame) => {
@@ -176,9 +174,12 @@ describe('performer frames', () => {
         expect(ack.errors.length).toBe(1);
     });
 
-    it('accepts a list at the limit', async () => {
-        send(Array.from({ length: MAX_EVENTS_PER_FRAME }, (_, i) => ping(`evt-${i}`)));
-        expect((await acks.next()).status).toBe(200);
+    it('sets no limit on how many events a list holds', async () => {
+        send(Array.from({ length: 5000 }, (_, i) => haptic(`evt-${i}`)));
+        const ack = await acks.next();
+        expect(ack.status).toBe(202);
+        expect(ack.accepted.length).toBe(5000);
+        expect((await received.next()).length).toBe(5000);
     });
 
     it('rejects a frame that is not JSON with 400', async () => {
@@ -196,25 +197,6 @@ describe('performer frames', () => {
             statuses.push((await acks.next()).status);
         }
         expect(statuses).toEqual([202, 400, 200, 422]);
-    });
-
-    it('accepts the largest valid frame without reaching the size limit', async () => {
-        // 500 captions with the longest eventId and text, written as escaped surrogate pairs,
-        // the most bytes a character can take in JSON.
-        const emoji = '\\ud83d\\ude00';
-        const raw = '[' + Array.from({ length: MAX_EVENTS_PER_FRAME }, (_, i) => {
-            const eventId = String(i).padStart(200, '0');
-            return JSON.stringify({ ...caption(eventId), payload: { text: '' } }).replace('"text":""', `"text":"${emoji.repeat(250)}"`);
-        }).join(',') + ']';
-        expect(Buffer.byteLength(raw)).toBeLessThan(MAX_FRAME_BYTES);
-        send(raw);
-        expect((await acks.next()).status).toBe(202);
-    });
-
-    it('closes the socket with 1009 when a frame is over the size limit', async () => {
-        const closed = new Promise<number>((resolve) => performer.on('close', (code) => resolve(code)));
-        send('x'.repeat(MAX_FRAME_BYTES + 1));
-        expect(await closed).toBe(1009);
     });
 
     it('still delivers to other devices when one device fails', async () => {

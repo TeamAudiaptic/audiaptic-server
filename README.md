@@ -10,8 +10,6 @@ The API reads these environment variables, from `api/.env` when running locally 
 | `SITE_DOMAIN` | `localhost` | Host the generated API docs point at. |
 | `PORT` | `3000` | Port the API listens on. |
 | `NODE_ENV` | `development` | `development`, `production`, or `test`. |
-| `MAX_EVENTS_PER_FRAME` | `500` | Most events Max can send in one frame. Larger lists get a `422` ack. |
-| `MAX_FRAME_BYTES` | `8388608` (8 MiB) | Largest frame the performer socket accepts. A bigger frame closes the connection with code `1009`. Must be at least `MAX_EVENTS_PER_FRAME` x 8192, or the API refuses to start. |
 
 ## Testing the client websocket locally
 
@@ -121,6 +119,6 @@ To see events from Max on your phone:
 
    Then restart the connection patch's `node.script`; it only reads `.env` when it starts. See the [connection patch setup](https://github.com/TeamAudiaptic/audiaptic-max/tree/main/src/connection) for the rest of the Max setup.
 
-2. Send an event, or a list of up to 500 events, from Max. Every valid event except `ping` is relayed to the audience in the form Max sent it: a single event, or a list of the valid events; `ping` only checks the connection between Max and the server.
+2. Send an event, or a list of events, from Max. Every valid event except `ping` is relayed to the audience in the form Max sent it: a single event, or a list of the valid events; `ping` only checks the connection between Max and the server.
 
 3. Check the ack Max receives. Each frame gets exactly one ack. A `202` means every event was valid and was relayed, and `deliveredTo` shows how many devices received it. A `207` or `422` lists the rejected events by `index` and `eventId`. See [Acknowledgements](https://teamaudiaptic.github.io/audiaptic-docs/docs/dev-docs/events/acknowledgements) for every status. The relayed events appear on the Test Session page.
