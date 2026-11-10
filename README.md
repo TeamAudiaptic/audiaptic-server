@@ -122,3 +122,14 @@ To see events from Max on your phone:
 2. Send an event, or a list of events, from Max. Every valid event except `ping` is relayed to the audience in the form Max sent it: a single event, or a list of the valid events; `ping` only checks the connection between Max and the server.
 
 3. Check the ack Max receives. Each frame gets exactly one ack. A `202` means every event was valid and was relayed, and `deliveredTo` shows how many devices received it. A `207` or `422` lists the rejected events by `index` and `eventId`. See [Acknowledgements](https://teamaudiaptic.github.io/audiaptic-docs/docs/dev-docs/events/acknowledgements) for every status. The relayed events appear on the Test Session page.
+
+### Sending events without Max
+
+The Test Session page has a **Max simulator** tab that stands in for Max. It connects to `ws://<IP Address>:3000/api/performer` and sends the same frames Max would.
+
+- **Compose event:** pick an event type and fill in its fields. The JSON below the form is what gets sent, and you can edit it by hand to send something the form can't, such as an unknown field. Hand-edited JSON is sent exactly as written.
+- **Send now** sends the event on its own. **Add to batch** queues it, and **Send batch** sends everything queued as one list.
+- **Error cases** each send one invalid frame, to check the `400`, `422`, and `207` acks.
+- **Sent frames** lists each frame with the ack the server returned for it.
+
+The **Audience view** tab stays connected while you use the simulator, so relayed events show up there. The form's fields are defined in [portal/src/maxEvents.ts](portal/src/maxEvents.ts), which mirrors the event schemas in [api/src/api-schemas/events](api/src/api-schemas/events) by hand, so update it when an event schema changes.
