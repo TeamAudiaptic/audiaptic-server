@@ -167,3 +167,21 @@ entries:
     emoji: ♻️
     label: Refactor
     message: Support for sending a list of events.
+- id: 15
+  pr: 61
+  author: CPW9783
+  time: '2026-11-10T22:19:32+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/61
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Created a max simulator to compose max events and send them to the performer WebSocket
+  - type: refactor
+    emoji: ♻️
+    label: Refactor
+    message: Modified the Test Session page to separate the max simulator from the audience view
+  - type: docs
+    emoji: 📝
+    label: Documentation
+    message: Added documentation for sending events without max
