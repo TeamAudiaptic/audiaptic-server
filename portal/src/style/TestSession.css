@@ -18,6 +18,39 @@
   margin: 0;
 }
 
+.test-session-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.test-session-tab {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.test-session-tab:hover {
+  background: var(--accent-bg);
+}
+
+.test-session-tab.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.test-session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .test-session-clear {
   font: inherit;
   padding: 8px 16px;
