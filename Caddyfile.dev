@@ -1,8 +1,16 @@
 http://localhost {
-    handle /api/* {
-        reverse_proxy host.docker.internal:3000
-    }
-    handle {
-        reverse_proxy host.docker.internal:5173
-    }
+	handle /api/* {
+		# Like production, the performer needs a token in its URL. In dev the
+		# token is always "dev": ws://localhost/api/performer?token=dev
+		@performer_without_token {
+			path /api/performer
+			not query token=dev
+		}
+		respond @performer_without_token "Wrong or missing performer token" 401
+
+		reverse_proxy host.docker.internal:3000
+	}
+	handle {
+		reverse_proxy host.docker.internal:5173
+	}
 }
