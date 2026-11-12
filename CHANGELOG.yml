@@ -195,3 +195,29 @@ entries:
     emoji: ✨
     label: Feature
     message: Added New endpoint that returns the serverTimestamp which is the server's current time when requested
+- id: 17
+  pr: 60
+  author: shackhorn
+  time: '2026-11-12T22:28:21+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/60
+  changes:
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: Production server auto-deployment is now active. The server redeploys from `main` every night at midnight Eastern, and on demand with the `audiaptic-redeploy` command on the server.
+  - type: feature
+    emoji: ✨
+    label: Feature
+    message: A Discord webhook receives deployment updates from the production server.\
+  - type: breaking
+    emoji: 💥
+    label: Breaking change
+    message: The portal and API now require a password, and the performer websocket requires a token. The Max team should use `dev` passed to the token query param when testing locally. Audience devices should still connect without one.
+  - type: maintenance
+    emoji: 🔧
+    label: Maintenance
+    message: Update Node from 20 to 24.
+  - type: maintenance
+    emoji: 🔧
+    label: Maintenance
+    message: The production containers now run as unprivileged users instead of root.
