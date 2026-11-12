@@ -8,6 +8,10 @@ export class APITorchEvent {
       durationMs: DurationMs,
       intensity: z.number().min(0).max(1),
       transitionMs: DurationMs,
+      strobe: z.object({
+        strobeHz: z.number(),
+        dutyCycle: z.number()
+      }).optional()
     })),
   } as const;
 }
