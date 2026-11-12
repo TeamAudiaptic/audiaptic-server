@@ -1,0 +1,11 @@
+[Unit]
+Description=Redeploy audiaptic-server every night at midnight Eastern
+
+[Timer]
+# America/New_York follows daylight saving time, so this stays at midnight
+# local time all year
+OnCalendar=*-*-* 00:00:00 America/New_York
+Unit=audiaptic-deploy@nightly.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+node_modules
+dist
+openapi.json
+asyncapi.json
+# Local secrets (R2 keys) must never end up in an image
+.env

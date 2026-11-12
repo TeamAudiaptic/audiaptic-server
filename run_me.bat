@@ -1,6 +1,6 @@
 @echo off
 REM Starts the dev environment: API, portal and the Caddy proxy, each in its own window.
-REM Then open http://localhost (portal) or ws://localhost/api/performer (socket).
+REM Then open http://localhost (portal) or ws://localhost/api/performer?token=dev (socket).
 
 REM %~dp0 is this script's folder, so it works no matter where it's run from.
 set ROOT=%~dp0
@@ -43,7 +43,7 @@ echo.
 echo Dev environment is starting in three windows.
 echo   Portal: http://localhost
 echo   API:    http://localhost/api/
-echo   Socket: ws://localhost/api/performer
+echo   Socket: ws://localhost/api/performer?token=dev
 echo.
 echo Press any key here to shut everything down...
 pause >nul

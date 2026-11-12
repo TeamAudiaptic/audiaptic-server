@@ -1,0 +1,9 @@
+# Build context for portal/Dockerfile. Only portal/ and the Caddyfile are used.
+.git
+.deploy
+api
+**/node_modules
+**/dist
+# Server and local secrets must never end up in an image
+**/.env
+**/*.local

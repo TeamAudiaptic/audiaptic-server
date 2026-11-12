@@ -1,6 +1,10 @@
 # audiaptic
 A distributed audio-visual-haptic performance solution.
 
+## Deployment
+
+Production runs on [davhi.se.rit.edu](https://davhi.se.rit.edu). It redeploys from `main` every night at midnight Eastern, and on demand with `audiaptic-redeploy` on the server. See [deploy/README.md](deploy/README.md) for setup and day-to-day commands.
+
 ## Configuration
 
 The API reads these environment variables, from `api/.env` when running locally or from the environment when running in Docker. Every one has a default, so none is required for local development.
@@ -64,7 +68,7 @@ With this change, the portal is also reachable at `http://<IP Address>` without 
 http://localhost, http://<IP Address> {
 ```
 
-Keep `localhost` in the list. If you replace it, `ws://localhost/api/performer`, which Max uses by default, stops working.
+Keep `localhost` in the list. If you replace it, `ws://localhost/api/performer?token=dev`, which Max uses, stops working.
 
 Don't commit this change, since the IP address is specific to your computer.
 
@@ -114,8 +118,10 @@ To see events from Max on your phone:
 1. In `audiaptic-max/src/connection/.env`, set:
 
    ```text
-   DAVHI_WEBSOCKET_URL="ws://localhost:3000/api/performer"
+   DAVHI_WEBSOCKET_URL="ws://localhost/api/performer?token=dev"
    ```
+
+   This goes through Caddy on port 80, which checks the performer token the way production does. In dev the token is always `dev`. Without it, the connection is refused with a `401`. For production, use `wss://davhi.se.rit.edu/api/performer?token=<token>` with the real token from the server's `.env`, and keep it out of git.
 
    Then restart the connection patch's `node.script`; it only reads `.env` when it starts. See the [connection patch setup](https://github.com/TeamAudiaptic/audiaptic-max/tree/main/src/connection) for the rest of the Max setup.
 

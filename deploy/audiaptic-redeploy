@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# audiaptic-redeploy: redeploys the latest main on davhi right now, the same
+# way the nightly deploy does, and shows its output as it runs.
+# deploy/install.sh installs this to /usr/local/bin.
+#
+# The deploy runs as a systemd service under the audiaptic account, so it
+# finishes even if you press Ctrl+C or your SSH session drops. Ctrl+C only
+# stops the output.
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+    exec sudo "$0" "$@"
+fi
+
+by=${SUDO_USER:-root}
+unit="audiaptic-deploy@$(systemd-escape "$by").service"
+
+echo "Redeploying the latest main. Ctrl+C stops watching; the deploy keeps going."
+journalctl --follow --output=cat --since=now --unit="$unit" &
+follower=$!
+trap 'kill "$follower" 2>/dev/null || true' EXIT
+
+status=0
+systemctl start "$unit" || status=$?
+sleep 1   # give journalctl a moment to print the last lines
+exit "$status"

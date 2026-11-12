@@ -1,47 +1,64 @@
-version: '3.8'
+# Production stack for davhi.se.rit.edu. deploy/deploy.sh redeploys it from main
+# every night at midnight Eastern and whenever someone runs audiaptic-redeploy;
+# see deploy/README.md. Settings and secrets come from .env next to this file
+# (start from .env.example). Local development uses run_me.bat and
+# docker.compose.dev.yml instead.
+name: audiaptic
+
+x-logging: &logging
+  # Rotated, so logs keep roughly two weeks of history without filling the disk
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "10"
 
 services:
   caddy:
-    image: caddy:latest
-    container_name: caddy-proxy
+    build:
+      context: .
+      dockerfile: portal/Dockerfile
+      args:
+        # Baked into the portal at build time. The API is on the portal's own
+        # origin, through Caddy, so browsers never need port 3000.
+        VITE_API_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env}
+        VITE_R2_BUCKET_URL: ${VITE_R2_BUCKET_URL:-}
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     environment:
-      # If SITE_DOMAIN is missing in .env, it falls back to 'localhost'
-      - SITE_DOMAIN=${SITE_DOMAIN:-localhost} 
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      ACME_EAB_KEY_ID: ${ACME_EAB_KEY_ID:-}
+      ACME_EAB_MAC_KEY: ${ACME_EAB_MAC_KEY:-}
+      # Required, because without them the portal and API would be open to anyone
+      PORTAL_USER: ${PORTAL_USER:?Set PORTAL_USER in .env}
+      PORTAL_PASSWORD_HASH: ${PORTAL_PASSWORD_HASH:?Set PORTAL_PASSWORD_HASH in .env}
+      PERFORMER_TOKEN: ${PERFORMER_TOKEN:?Set PERFORMER_TOKEN in .env}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      # Certificates and the ACME account key. If these are lost, Caddy has to
+      # register again, which needs fresh EAB credentials.
       - caddy_data:/data
       - caddy_config:/config
-    networks:
-      - app-net
+    depends_on:
+      davhi-api:
+        condition: service_healthy
+    logging: *logging
 
   davhi-api:
     build: ./api
-    container_name: davhi-api
     restart: unless-stopped
+    # Not published: only Caddy reaches it, over the compose network
     environment:
-      - PORT=3000
-      - NODE_ENV=${NODE_ENV:-development} # Falls back to development locally
-    networks:
-      - app-net
-
-  davhi-portal:
-    build: ./portal
-    container_name: davhi-portal
-    restart: unless-stopped
-    environment:
-      - PORT=3000
-      - NODE_ENV=${NODE_ENV:-development} # Falls back to development locally
-    networks:
-      - app-net
+      NODE_ENV: production
+      PORT: 3000
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+      CLOUDFLARE_R2_ACCESS_KEY_ID: ${CLOUDFLARE_R2_ACCESS_KEY_ID:-}
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+    logging: *logging
 
 volumes:
   caddy_data:
   caddy_config:
-
-networks:
-  app-net:
-    driver: bridge
