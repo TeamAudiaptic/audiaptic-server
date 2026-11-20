@@ -15,6 +15,7 @@ import { audienceRoute } from './sockets/routes/audience.route';
 import { helloWorldRoute } from './routes/helloWorld.route';
 import { buildAsyncApiSpec } from './docs/asyncapi';
 import { timeRoute } from './routes/time.route';
+import { trustCaddyOnly } from './trustProxy';
 
 declare module 'fastify' {
     interface FastifyRequest {
@@ -26,6 +27,7 @@ const isProd = env.NODE_ENV === 'production';
 
 const app = Fastify({
     logger: true,
+    trustProxy: trustCaddyOnly,
 }).withTypeProvider<ZodTypeProvider>();
 
 app.decorateRequest('serverTimestamp', 0);

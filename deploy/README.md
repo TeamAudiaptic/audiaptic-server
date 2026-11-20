@@ -118,6 +118,7 @@ Don't edit files in `/opt/audiaptic-server` by hand. Each deploy force-checks-ou
 - **Portal:** `https://davhi.se.rit.edu`. The browser asks for `PORTAL_USER` and the portal password, then the portal shows its own login page.
 - **Performer websocket (Max):** `wss://davhi.se.rit.edu/api/performer?token=<PERFORMER_TOKEN>`. Without the right token, the connection is refused with a 401.
 - **Audience websocket:** `wss://davhi.se.rit.edu/api/audience/{code}`. No password needed.
+- **Time endpoint:** `https://davhi.se.rit.edu/api/time`, used by Max and the app for clock sync. No password needed.
 - **Anything else under `/api`**, such as `curl` or `/api/docs`, needs the portal login: `curl -u <PORTAL_USER> https://davhi.se.rit.edu/api/...`
 
 The password is a stopgap. The portal's own login page only checks in the browser, and the API doesn't check logins yet.
