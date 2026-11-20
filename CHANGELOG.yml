@@ -221,3 +221,13 @@ entries:
     emoji: 🔧
     label: Maintenance
     message: The production containers now run as unprivileged users instead of root.
+- id: 18
+  pr: 63
+  author: Josh-mitch
+  time: '2026-11-20T04:50:42+00:00'
+  url: https://github.com/TeamAudiaptic/audiaptic-server/pull/63
+  changes:
+  - type: fix
+    emoji: 🐛
+    label: Fix
+    message: Removes auth from the time endpoint and adds a rate limit
